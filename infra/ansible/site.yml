@@ -9,6 +9,7 @@
     direwolf_display_root: /opt/direwolf-display
     direwolf_display_repo_src: "/opt/direwolf-display-src"
     direwolf_display_services:
+      - direwolf.service
       - direwolf-display.service
       - direwolf-tail.service
     direwolf_display_packages:
@@ -18,6 +19,7 @@
       - python3
       - python3-venv
       - python3-pip
+      - direwolf
       - rtl-sdr
   pre_tasks:
     - name: Refresh apt cache
@@ -90,6 +92,22 @@
       ansible.builtin.template:
         src: "{{ direwolf_display_repo_src }}/infra/templates/direwolf.conf.j2"
         dest: /etc/direwolf.conf
+        owner: "{{ direwolf_display_user }}"
+        group: "{{ direwolf_display_group }}"
+        mode: "0644"
+
+    - name: Ensure Direwolf environment directory exists
+      ansible.builtin.file:
+        path: /etc/direwolf
+        state: directory
+        owner: "{{ direwolf_display_user }}"
+        group: "{{ direwolf_display_group }}"
+        mode: "0755"
+
+    - name: Install Direwolf environment file
+      ansible.builtin.template:
+        src: "{{ direwolf_display_repo_src }}/infra/templates/direwolf.env.j2"
+        dest: /etc/direwolf/direwolf.env
         owner: "{{ direwolf_display_user }}"
         group: "{{ direwolf_display_group }}"
         mode: "0644"
