@@ -6,8 +6,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/direwolf_display
-Environment=UV_PROJECT_ENV=/opt/direwolf_display/.venv
+WorkingDirectory=/opt/direwolf-display
+Environment=UV_PROJECT_ENV=/opt/direwolf-display/.venv
 ExecStart=/usr/bin/env uv run python tools/direwolf_csv_tail.py \
     --log-dir /var/log/direwolf \
     --post-url http://127.0.0.1:9090/v1 \

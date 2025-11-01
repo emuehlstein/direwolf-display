@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: ./pi_postinstall.sh [/path/to/direwolf_display]
-# Default assumes the repository already exists at /opt/direwolf_display-src.
+# Usage: ./pi_postinstall.sh [/path/to/direwolf-display]
+# Default assumes the repository already exists at /opt/direwolf-display-src.
 
-REPO_DIR="${1:-/opt/direwolf_display-src}"
+REPO_DIR="${1:-/opt/direwolf-display-src}"
 PLAYBOOK="infra/ansible/site.yml"
 INVENTORY="infra/ansible/inventory.ini"
 
@@ -16,7 +16,7 @@ fi
 if [[ ! -d "$REPO_DIR" ]]; then
   echo "Repository directory not found at $REPO_DIR" >&2
   echo "Clone the project first, for example:" >&2
-  echo "  git clone https://github.com/your-org/direwolf_display.git $REPO_DIR" >&2
+  echo "  git clone https://github.com/your-org/direwolf-display.git $REPO_DIR" >&2
   exit 1
 fi
 

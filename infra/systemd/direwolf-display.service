@@ -6,8 +6,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/direwolf_display
-Environment=UV_PROJECT_ENV=/opt/direwolf_display/.venv
+WorkingDirectory=/opt/direwolf-display
+Environment=UV_PROJECT_ENV=/opt/direwolf-display/.venv
 ExecStart=/usr/bin/env uv run uvicorn app.main:create_app --factory --host 0.0.0.0 --port 9090
 Restart=on-failure
 RestartSec=5

@@ -158,7 +158,7 @@ sudo systemctl enable --now direwolf-tail
 ## Automated provisioning (Ansible)
 
 For hands-free Raspberry Pi setup, use the playbook in `infra/ansible/site.yml`.
-It installs required apt packages, syncs this repository to `/opt/direwolf_display`,
+It installs required apt packages, syncs this repository to `/opt/direwolf-display`,
 creates the uv environment, and enables the systemd units.
 
 ```bash
@@ -180,8 +180,8 @@ playbook with the local checkout path.
    example, add the following to the run-on-first-boot command:
 
    ```bash
-   git clone https://github.com/your-org/direwolf_display.git /opt/direwolf_display-src && \
-   bash /opt/direwolf_display-src/scripts/pi_postinstall.sh /opt/direwolf_display-src
+   git clone https://github.com/your-org/direwolf-display.git /opt/direwolf-display-src && \
+   bash /opt/direwolf-display-src/scripts/pi_postinstall.sh /opt/direwolf-display-src
    ```
 
 2. **First boot**: the post-install script installs Ansible plus required
@@ -195,6 +195,10 @@ playbook with the local checkout path.
 
 3. **Validate**: open `http://<pi-hostname>:9090/` to view the map, and confirm
    `/stats` increments as packets arrive.
+
+Before running the playbook, edit `infra/templates/direwolf.conf.j2` to set your
+callsign, tactical aliases, and audio device names so the rendered `/etc/direwolf.conf`
+matches the station you are deploying.
 
 ## Next steps
 
