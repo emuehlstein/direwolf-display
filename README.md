@@ -180,7 +180,7 @@ playbook with the local checkout path.
    example, add the following to the run-on-first-boot command:
 
    ```bash
-   git clone https://github.com/your-org/direwolf-display.git /opt/direwolf-display-src && \
+   git clone https://github.com/emuehlstein/direwolf-display.git /opt/direwolf-display-src && \
    bash /opt/direwolf-display-src/scripts/pi_postinstall.sh /opt/direwolf-display-src
    ```
 

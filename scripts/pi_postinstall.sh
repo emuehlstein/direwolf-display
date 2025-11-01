@@ -16,7 +16,7 @@ fi
 if [[ ! -d "$REPO_DIR" ]]; then
   echo "Repository directory not found at $REPO_DIR" >&2
   echo "Clone the project first, for example:" >&2
-  echo "  git clone https://github.com/your-org/direwolf-display.git $REPO_DIR" >&2
+  echo "  git clone https://github.com/emuehlstein/direwolf-display.git $REPO_DIR" >&2
   exit 1
 fi
 
