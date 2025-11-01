@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Direwolf Display</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"
+      integrity="sha256-QZFpF9DkpabUBLoCc7fQJVCmtag/LaVAfAkUJSfuNyY="
+      crossorigin="anonymous"
+    />
+    <style>
+      :root {
+        color-scheme: dark light;
+        font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        background: #111;
+        color: #eee;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #app {
+        position: relative;
+        flex: 1 1 auto;
+        overflow: hidden;
+      }
+
+      #map {
+        position: absolute;
+        inset: 0;
+      }
+
+      .status-bar {
+        position: absolute;
+        inset: auto 1rem 1rem 1rem;
+        padding: 0.75rem 1rem;
+        background: rgba(0, 0, 0, 0.65);
+        border-radius: 0.5rem;
+        backdrop-filter: blur(6px);
+        font-size: 0.95rem;
+        line-height: 1.3;
+        z-index: 1000;
+        pointer-events: none;
+      }
+
+      .status-grid {
+        display: grid;
+        gap: 0.25rem 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      }
+
+      .status-grid span {
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .status-grid span strong {
+        font-weight: 600;
+        color: #8bd3ff;
+        margin-right: 0.5rem;
+      }
+
+      .status-message {
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: #c2c2c2;
+      }
+
+      a {
+        color: #8bd3ff;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="map" role="img" aria-label="Direwolf packet map"></div>
+      <section class="status-bar" aria-live="polite">
+        <div class="status-grid">
+          <span><strong>Packets</strong><output id="packets-count">0</output></span>
+          <span><strong>RSSI</strong><output id="rssi-count">0</output></span>
+          <span><strong>Stations</strong><output id="stations-count">0</output></span>
+        </div>
+        <p class="status-message" id="status-message">
+          Connecting to stream…
+        </p>
+      </section>
+    </div>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"
+      integrity="sha256-MgH13bFTTNqsnuEoqNPBLDaqxjGH+lCpqrukmXc8Ppg="
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      (function () {
+        const packetMarkers = new Map();
+        const map = L.map("map", {
+          worldCopyJump: true,
+        }).setView([39, -98], 4);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19,
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(map);
+
+        const packetsOutput = document.querySelector("#packets-count");
+        const rssiOutput = document.querySelector("#rssi-count");
+        const stationsOutput = document.querySelector("#stations-count");
+        const statusMessage = document.querySelector("#status-message");
+
+        const stationTrails = new Map();
+        const historyLimit = 20;
+
+        function updateStats(data) {
+          if (typeof data.packets === "number") packetsOutput.value = data.packets;
+          if (typeof data.rssi_samples === "number") rssiOutput.value = data.rssi_samples;
+          if (typeof data.stations_tracked === "number") stationsOutput.value = data.stations_tracked;
+        }
+
+        async function refreshStats() {
+          try {
+            const response = await fetch("/stats");
+            if (!response.ok) {
+              throw new Error(`Stats request failed (${response.status})`);
+            }
+            const payload = await response.json();
+            updateStats(payload);
+          } catch (error) {
+            console.warn("Unable to refresh stats", error);
+          }
+        }
+
+        async function loadRecentStations() {
+          try {
+            const response = await fetch("/v1/stations?within_seconds=3600");
+            if (!response.ok) {
+              throw new Error(`Stations request failed (${response.status})`);
+            }
+            const stations = await response.json();
+            stations.forEach(addPacketMarker);
+            if (stations.length > 0) {
+              statusMessage.textContent = `Loaded ${stations.length} stations from the last hour.`;
+            }
+          } catch (error) {
+            console.warn("Unable to load recent stations", error);
+          }
+        }
+
+        function formatTooltip(payload) {
+          const callsign = payload.source_callsign || "Unknown";
+          const time = payload.timestamp || payload.unix_time;
+          const speed = payload.speed != null ? `${payload.speed.toFixed(1)} km/h` : "n/a";
+          const course = payload.course != null ? `${payload.course.toFixed(0)}°` : "n/a";
+          const comment = payload.comment || payload.status || "";
+          return `
+            <div class="tooltip">
+              <strong>${callsign}</strong><br />
+              <small>${time || "No timestamp"}</small><br />
+              <span>Speed: ${speed}</span><br />
+              <span>Course: ${course}</span><br />
+              <span>${comment}</span>
+            </div>
+          `;
+        }
+
+        function addPacketMarker(payload) {
+          const lat = payload.latitude ?? payload.lat ?? null;
+          const lon = payload.longitude ?? payload.lng ?? payload.lon ?? null;
+          if (typeof lat !== "number" || typeof lon !== "number") {
+            return;
+          }
+
+          const callsign = payload.source_callsign || `Station-${packetMarkers.size + 1}`;
+          const marker = packetMarkers.get(callsign);
+
+          if (marker) {
+            marker.setLatLng([lat, lon]);
+            marker.setPopupContent(formatTooltip(payload));
+          } else {
+            const icon = L.icon({
+              iconUrl: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-icon.png",
+              iconRetinaUrl:
+                "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+              shadowUrl: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-shadow.png",
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+              popupAnchor: [1, -34],
+              shadowSize: [41, 41],
+            });
+
+            const newMarker = L.marker([lat, lon], {
+              icon,
+              title: callsign,
+            });
+            newMarker.bindPopup(formatTooltip(payload));
+            newMarker.addTo(map);
+            packetMarkers.set(callsign, newMarker);
+          }
+
+          let trail = stationTrails.get(callsign);
+          if (!trail) {
+            trail = [];
+            stationTrails.set(callsign, trail);
+          }
+
+          trail.push([lat, lon]);
+          if (trail.length > historyLimit) {
+            trail.shift();
+          }
+
+          if (!trail.polyline) {
+            trail.polyline = L.polyline(trail, {
+              color: "#8bd3ff",
+              weight: 2,
+              opacity: 0.6,
+            }).addTo(map);
+          } else {
+            trail.polyline.setLatLngs(trail);
+          }
+        }
+
+        function handlePacketEvent(event) {
+          try {
+            const payload = JSON.parse(event.data);
+            addPacketMarker(payload);
+          } catch (error) {
+            console.warn("Unable to process packet event", error);
+          }
+        }
+
+        function handleRssiEvent(event) {
+          try {
+            const payload = JSON.parse(event.data);
+            const info = `${payload.dbm.toFixed(1)} dBm @ ${payload.frequency_mhz.toFixed(2)} MHz`;
+            statusMessage.textContent = `Latest RSSI: ${info}`;
+          } catch (error) {
+            console.warn("Unable to process RSSI event", error);
+          }
+        }
+
+        function handleHeartbeat(event) {
+          try {
+            const payload = JSON.parse(event.data);
+            if (payload.timestamp) {
+              statusMessage.textContent = `Connected – heartbeat ${payload.timestamp}`;
+            }
+          } catch (error) {
+            console.warn("Unable to process heartbeat event", error);
+          }
+        }
+
+        function handleOpen() {
+          statusMessage.textContent = "Connected to live stream.";
+        }
+
+        function handleError(event, readyState) {
+          console.error("SSE stream error", { event, readyState });
+          const stateLabel =
+            readyState === EventSource.CLOSED
+              ? "closed"
+              : readyState === EventSource.CONNECTING
+              ? "connecting"
+              : "open";
+          statusMessage.textContent = `Stream ${stateLabel}; attempting to reconnect…`;
+        }
+
+        refreshStats();
+        loadRecentStations();
+        setInterval(refreshStats, 15000);
+
+        const streamUrl = new URL("/v1/stream", window.location.href).toString();
+        console.debug("Connecting to SSE stream:", streamUrl);
+        const source = new EventSource(streamUrl);
+        source.addEventListener("open", handleOpen);
+        source.addEventListener("error", (event) => handleError(event, source.readyState));
+        source.addEventListener("packet", handlePacketEvent);
+        source.addEventListener("rssi", handleRssiEvent);
+        source.addEventListener("heartbeat", handleHeartbeat);
+      })();
+    </script>
+  </body>
+</html>

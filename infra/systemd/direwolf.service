@@ -1,0 +1,19 @@
+[Unit]
+Description=Direwolf APRS TNC with CSV logging
+After=network-online.target sound.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=direwolf
+Group=direwolf
+WorkingDirectory=/var/lib/direwolf 
+EnvironmentFile=-/etc/direwolf/direwolf.env
+ExecStart=/usr/bin/direwolf -a 300 -l /var/log/direwolf
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
