@@ -61,14 +61,6 @@
         group: "{{ direwolf_display_group }}"
         mode: "0755"
 
-    - name: Install Direwolf configuration
-      ansible.builtin.template:
-        src: "{{ direwolf_display_root }}/infra/templates/direwolf.conf.j2"
-        dest: /etc/direwolf.conf
-        owner: "{{ direwolf_display_user }}"
-        group: "{{ direwolf_display_group }}"
-        mode: "0644"
-
     - name: Install uv if missing
       ansible.builtin.shell: |
         set -euo pipefail
@@ -93,6 +85,14 @@
         recurse: true
         owner: "{{ direwolf_display_user }}"
         group: "{{ direwolf_display_group }}"
+
+    - name: Install Direwolf configuration
+      ansible.builtin.template:
+        src: "{{ direwolf_display_repo_src }}/infra/templates/direwolf.conf.j2"
+        dest: /etc/direwolf.conf
+        owner: "{{ direwolf_display_user }}"
+        group: "{{ direwolf_display_group }}"
+        mode: "0644"
 
     - name: Install Python dependencies with uv
       ansible.builtin.command: uv sync --frozen --no-dev
