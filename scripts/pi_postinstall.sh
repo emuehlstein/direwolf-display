@@ -23,8 +23,8 @@ fi
 cd "$REPO_DIR"
 
 echo "[pi_postinstall] Updating apt cache and installing dependencies"
-apt-get update
-apt-get install -y ansible git rsync python3 python3-venv python3-pip curl
+apt update
+apt install -y ansible git rsync python3 python3-venv python3-pip curl
 
 echo "[pi_postinstall] Installing required Ansible collections"
 ansible-galaxy collection install ansible.posix
