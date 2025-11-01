@@ -7,7 +7,7 @@
     direwolf_display_group: direwolf
     direwolf_display_home: /var/lib/direwolf
     direwolf_display_root: /opt/direwolf-display
-    direwolf_display_repo_src: "{{ playbook_dir | dirname | dirname }}"
+    direwolf_display_repo_src: "/opt/direwolf-display-src"
     direwolf_display_services:
       - direwolf-display.service
       - direwolf-tail.service
