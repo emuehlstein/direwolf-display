@@ -50,6 +50,20 @@ def test_parse_audio_level_variants() -> None:
     assert MODULE.parse_audio_level(None) is None
 
 
+def test_normalize_event_with_path_field() -> None:
+    row = {
+        "chan": "0",
+        "utime": "1761788650",
+        "isotime": "2025-10-30T01:44:10Z",
+        "source": "KC9MHE-7",
+        "heard": "WA9NNN-10",
+        "path": "WIDE1-1,N2GH*,WIDE2-1",
+    }
+    event = MODULE.normalize_event(row)
+
+    assert event["path"] == ["WIDE1-1", "N2GH*", "WIDE2-1"]
+
+
 def test_select_log_file_prefers_newest(tmp_path: Path) -> None:
     older = tmp_path / "older.log"
     newer = tmp_path / "newer.csv"

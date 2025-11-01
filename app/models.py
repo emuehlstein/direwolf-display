@@ -28,6 +28,7 @@ class PacketEvent(BaseModel):
     channel: Optional[int] = Field(default=None, ge=0)
     source_callsign: Optional[str] = None
     destination_callsign: Optional[str] = None
+    path: Optional[List[str]] = None
     dti: Optional[str] = None
     name: Optional[str] = None
     symbol: Optional[str] = None

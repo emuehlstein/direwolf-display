@@ -25,6 +25,7 @@ async def test_packet_ingest_updates_stats_and_stream():
             "source_callsign": "TEST-1",
             "destination_callsign": "GATE",
             "message_type": "packet",
+            "path": ["WIDE1-1", "GATE*"],
         }
         response = await client.post("/v1/packets", json={"packets": [packet_payload]})
         assert response.status_code == 200
@@ -44,6 +45,7 @@ async def test_packet_ingest_updates_stats_and_stream():
                 if line.startswith("data:"):
                     payload = json.loads(line.removeprefix("data:"))
                     assert payload["source_callsign"] == "TEST-1"
+                    assert payload["path"] == ["WIDE1-1", "GATE*"]
                     break
 
 
@@ -118,6 +120,7 @@ async def test_recent_stations_endpoint_returns_unique_latest_packets():
             "message_type": "packet",
             "latitude": 41.5,
             "longitude": -87.6,
+            "path": ["WIDE2-1", "IGATE*"],
         }
         response = await client.post("/v1/packets", json={"packets": [base_payload]})
         assert response.status_code == 200

@@ -212,6 +212,15 @@ def normalize_event(row: Dict[str, str]) -> Dict[str, object]:
             if raw_value:
                 event[target] = raw_value
 
+    path_fields = ("path", "via", "digipeaters", "route")
+    for field_name in path_fields:
+        path_value = cleaned.get(field_name)
+        if path_value:
+            components = [component.strip() for component in path_value.split(",") if component.strip()]
+            if components:
+                event["path"] = components
+            break
+
     event["raw_row"] = dict(row)
     return event
 
