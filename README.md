@@ -135,6 +135,67 @@ uv run pytest
 The suite exercises storage retention logic, ingest endpoints, SSE delivery,
 and the replay helper’s synthetic RSSI path so regressions surface quickly.
 
+## Running under systemd
+
+The repository includes a sample unit file at `infra/systemd/direwolf-display.service`.
+Update the `WorkingDirectory`, `User`, and `Group` fields for your deployment,
+copy it into `/etc/systemd/system/`, then enable it:
+
+```bash
+sudo cp infra/systemd/direwolf-display.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now direwolf-display
+```
+
+To feed packets automatically, install the tailer unit as well:
+
+```bash
+sudo cp infra/systemd/direwolf-tail.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now direwolf-tail
+```
+
+## Automated provisioning (Ansible)
+
+For hands-free Raspberry Pi setup, use the playbook in `infra/ansible/site.yml`.
+It installs required apt packages, syncs this repository to `/opt/direwolf_display`,
+creates the uv environment, and enables the systemd units.
+
+```bash
+ansible-galaxy collection install ansible.posix
+ansible-playbook -i infra/ansible/inventory.ini infra/ansible/site.yml \
+  --extra-vars "direwolf_display_repo_src=$(pwd)"
+```
+
+When customising Raspberry Pi Imager, reference `scripts/pi_postinstall.sh` in the
+user-data or post-install hook so the Pi clones this repository and invokes the
+playbook on first boot. The script installs Ansible if needed and then calls the
+playbook with the local checkout path.
+
+### Quick-start on a Raspberry Pi
+
+1. **Prepare the SD card** in Raspberry Pi Imager. In the advanced settings
+   (gear icon), enable SSH, set credentials, and add a post-install script that
+   downloads/clones this repository and runs `scripts/pi_postinstall.sh`. For
+   example, add the following to the run-on-first-boot command:
+
+   ```bash
+   git clone https://github.com/your-org/direwolf_display.git /opt/direwolf_display-src && \
+   bash /opt/direwolf_display-src/scripts/pi_postinstall.sh /opt/direwolf_display-src
+   ```
+
+2. **First boot**: the post-install script installs Ansible plus required
+   packages, executes the playbook, and enables the `direwolf-display` and
+   `direwolf-tail` services. It also writes `/etc/direwolf.conf` with sensible
+   defaults (CSV logging under `/var/log/direwolf`). Tail systemd logs to verify:
+
+   ```bash
+   journalctl -u direwolf-display -u direwolf-tail -f
+   ```
+
+3. **Validate**: open `http://<pi-hostname>:9090/` to view the map, and confirm
+   `/stats` increments as packets arrive.
+
 ## Next steps
 
 - Build out the Leaflet frontend to visualise `/v1/stream` events.

@@ -1,0 +1,125 @@
+---
+- name: Provision Direwolf Display Raspberry Pi
+  hosts: direwolf_pi
+  become: true
+  vars:
+    direwolf_display_user: direwolf
+    direwolf_display_group: direwolf
+    direwolf_display_home: /var/lib/direwolf
+    direwolf_display_root: /opt/direwolf_display
+    direwolf_display_repo_src: "{{ playbook_dir | dirname | dirname }}"
+    direwolf_display_services:
+      - direwolf-display.service
+      - direwolf-tail.service
+    direwolf_display_packages:
+      - git
+      - rsync
+      - curl
+      - python3
+      - python3-venv
+      - python3-pip
+      - rtl-sdr
+  pre_tasks:
+    - name: Refresh apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+  tasks:
+    - name: Install required packages
+      ansible.builtin.apt:
+        name: "{{ direwolf_display_packages }}"
+        state: present
+
+    - name: Ensure Direwolf group exists
+      ansible.builtin.group:
+        name: "{{ direwolf_display_group }}"
+        system: true
+
+    - name: Ensure Direwolf user exists
+      ansible.builtin.user:
+        name: "{{ direwolf_display_user }}"
+        group: "{{ direwolf_display_group }}"
+        shell: /bin/bash
+        home: "{{ direwolf_display_home }}"
+        create_home: true
+        system: true
+
+    - name: Ensure application directory exists
+      ansible.builtin.file:
+        path: "{{ direwolf_display_root }}"
+        state: directory
+        owner: "{{ direwolf_display_user }}"
+        group: "{{ direwolf_display_group }}"
+        mode: "0755"
+
+    - name: Ensure Direwolf log directory exists
+      ansible.builtin.file:
+        path: /var/log/direwolf
+        state: directory
+        owner: "{{ direwolf_display_user }}"
+        group: "{{ direwolf_display_group }}"
+        mode: "0755"
+
+    - name: Install Direwolf configuration
+      ansible.builtin.template:
+        src: "{{ direwolf_display_root }}/infra/templates/direwolf.conf.j2"
+        dest: /etc/direwolf.conf
+        owner: "{{ direwolf_display_user }}"
+        group: "{{ direwolf_display_group }}"
+        mode: "0644"
+
+    - name: Install uv if missing
+      ansible.builtin.shell: |
+        set -euo pipefail
+        curl -Ls https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
+      args:
+        creates: /usr/local/bin/uv
+
+    - name: Synchronize source into deployment directory
+      ansible.posix.synchronize:
+        src: "{{ direwolf_display_repo_src }}/"
+        dest: "{{ direwolf_display_root }}/"
+        delete: true
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=.venv"
+          - "--exclude=__pycache__"
+
+    - name: Fix ownership after sync
+      ansible.builtin.file:
+        path: "{{ direwolf_display_root }}"
+        state: directory
+        recurse: true
+        owner: "{{ direwolf_display_user }}"
+        group: "{{ direwolf_display_group }}"
+
+    - name: Install Python dependencies with uv
+      ansible.builtin.command: uv sync --frozen --no-dev
+      args:
+        chdir: "{{ direwolf_display_root }}"
+      become_user: "{{ direwolf_display_user }}"
+      environment:
+        UV_PROJECT_ENV: "{{ direwolf_display_root }}/.venv"
+        PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+
+    - name: Install systemd unit files
+      ansible.builtin.copy:
+        src: "{{ direwolf_display_root }}/infra/systemd/{{ item }}"
+        dest: "/etc/systemd/system/{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+        remote_src: true
+      loop: "{{ direwolf_display_services }}"
+
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Enable and start Direwolf services
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: true
+        state: started
+      loop: "{{ direwolf_display_services }}"
