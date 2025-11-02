@@ -16,7 +16,7 @@
     direwolf_callsign: NOCALL
     direwolf_latitude: "41^58.70N"
     direwolf_longitude: "087^40.92W"
-    direwolf_beacon_comment: "Direwolf Display"
+    direwolf_beacon_comment: "Direwolf Display https://github.com/emuehlstein/direwolf-display"
     direwolf_beacon_rf_enabled: true
     direwolf_beacon_rf_delay: "0:30"
     direwolf_beacon_rf_every: "30:00"
