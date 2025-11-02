@@ -14,8 +14,8 @@
     direwolf_ptt_line: RTS
     direwolf_ptt_extra: ""
     direwolf_callsign: NOCALL
-    direwolf_latitude: ""
-    direwolf_longitude: ""
+    direwolf_latitude: "41^58.70N"
+    direwolf_longitude: "087^40.92W"
     direwolf_beacon_comment: "Direwolf Display"
     direwolf_beacon_rf_enabled: true
     direwolf_beacon_rf_delay: "0:30"
@@ -28,13 +28,13 @@
     direwolf_beacon_ig_every: "5:00"
     direwolf_beacon_ig_symbol: "igate"
     direwolf_beacon_ig_overlay: R
-    direwolf_enable_digipeater: false
+    direwolf_enable_digipeater: true
     direwolf_digipeater_input: 0
     direwolf_digipeater_output: 0
     direwolf_digipeater_match: "^WIDE[3-7]-[1-7]$|^TEST$"
     direwolf_digipeater_replace: "^WIDE[12]-[12]$"
     direwolf_digipeater_options: "TRACE"
-    direwolf_enable_igate_rx: false
+    direwolf_enable_igate_rx: true
     direwolf_igate_server: noam.aprs2.net
     direwolf_igate_login: ""
     direwolf_igate_passcode: ""
