@@ -9,6 +9,7 @@ User=direwolf
 Group=direwolf
 WorkingDirectory=/opt/direwolf-display
 EnvironmentFile=-/etc/direwolf/direwolf.env
+Environment=UV_PROJECT_ENV=/opt/direwolf-display/.venv
 ExecStart=/opt/direwolf-display/scripts/run_direwolf.sh
 Restart=always
 RestartSec=5
