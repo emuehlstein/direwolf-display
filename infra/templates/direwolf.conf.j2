@@ -1,9 +1,10 @@
 # Direwolf configuration managed by Ansible
-ADEVICE {{ direwolf_audio_input }} {{ direwolf_audio_output }}
+ADEVICE {{ direwolf_audio_input }}{% if direwolf_audio_output != direwolf_audio_input %} {{ direwolf_audio_output }}{% endif %}
 ACHANNELS 1
 ARATE 48000
 CHANNEL 0
 MYCALL NOCALL
+MODEM 1200
 PTT RIG {{ direwolf_ptt_device }} {{ direwolf_ptt_line }}
 
 # Logging configuration for CSV tailer

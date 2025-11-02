@@ -9,6 +9,7 @@ dependencies = [
     "uvicorn[standard]>=0.30.0",
     "pydantic-settings>=2.4.0",
     "httpx>=0.27.0",
+    "sa818>=0.2.9",
 ]
 
 [project.optional-dependencies]
