@@ -6,10 +6,3 @@ CHANNEL 0
 MYCALL NOCALL
 MODEM 1200
 PTT {{ direwolf_ptt_device }} {{ direwolf_ptt_line }}{% if direwolf_ptt_extra %} {{ direwolf_ptt_extra }}{% endif %}
-
-# Logging configuration for CSV tailer
-LOGDIR /var/log/direwolf
-LOGFILE %Y-%m-%d.log
-LOGFIXCSV 1
-LOGBEEPS 0
-IGFILTER 0
