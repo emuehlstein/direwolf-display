@@ -159,7 +159,8 @@ sudo systemctl enable --now direwolf-tail
 
 For hands-free Raspberry Pi setup, use the playbook in `infra/ansible/site.yml`.
 It installs required apt packages, syncs this repository to `/opt/direwolf-display`,
-creates the uv environment, and enables the systemd units.
+creates the uv environment, configures Direwolf (including PTT, optional Digi/iGate
+rules, and SA818 programming), and enables the systemd units.
 
 ```bash
 ansible-galaxy collection install ansible.posix
@@ -167,31 +168,77 @@ ansible-playbook -i infra/ansible/inventory.ini infra/ansible/site.yml \
   --extra-vars "direwolf_display_repo_src=$(pwd)"
 ```
 
-When customising Raspberry Pi Imager, reference `scripts/pi_postinstall.sh` in the
-user-data or post-install hook so the Pi clones this repository and invokes the
-playbook on first boot. The script installs Ansible if needed and then calls the
-playbook with the local checkout path.
+### Pi first-boot helper
 
-### Quick-start on a Raspberry Pi
+`scripts/firstrun.sh` wraps cloning plus provisioning so you can seed station
+details during the initial boot:
 
-1. **Prepare the SD card** in Raspberry Pi Imager. In the advanced settings
-   (gear icon), enable SSH, set credentials, and add a post-install script that
-   downloads/clones this repository and runs `scripts/pi_postinstall.sh`. For
-   example, add the following to the run-on-first-boot command:
+```bash
+sudo ./scripts/firstrun.sh \
+  --callsign N0CALL-10 \
+  --digipeater \
+  --rx-igate \
+  --igate-login N0CALL-10 \
+  --dest /opt/direwolf-display-src
+```
 
-   ```bash
-   git clone https://github.com/emuehlstein/direwolf-display.git /opt/direwolf-display-src && \
-   bash /opt/direwolf-display-src/scripts/pi_postinstall.sh /opt/direwolf-display-src
-   ```
+Flags you might care about:
 
-2. **First boot**: the post-install script installs Ansible plus required
-   packages, executes the playbook, and enables the `direwolf-display` and
-   `direwolf-tail` services. It also writes `/etc/direwolf.conf` with sensible
-   defaults (CSV logging under `/var/log/direwolf`). Tail systemd logs to verify:
+- `--callsign`: seeds the `MYCALL` line in Direwolf.
+- `--digipeater`: enables a WIDEn-N-rule by default; use the `--digipeater-*`
+  overrides to supply custom match/replace/options.
+- `--rx-igate`: connects to APRS-IS (default rotate: `noam.aprs2.net`); combine
+  with `--igate-login`, `--igate-filter`, and `--igate-server` to tune behaviour.
+- `--igate-passcode`: optional; if omitted we derive the standard APRS-IS passcode
+  from the login (or callsign).
 
-   ```bash
-   journalctl -u direwolf-display -u direwolf-tail -f
-   ```
+The script accepts `--dest` when you want the repository in a different path.
+If the path already exists it skips the clone and just invokes the post-install
+step.
+
+### Post-install provisioning script
+
+`scripts/pi_postinstall.sh` is what the first-run helper calls. It can be used
+independently on a Pi that already has this repository checked out:
+
+```bash
+sudo ./scripts/pi_postinstall.sh \
+  --callsign N0CALL-10 \
+  --digipeater \
+  --rx-igate --igate-login N0CALL-10 \
+  /opt/direwolf-display-src
+```
+
+Highlights:
+
+- Writes `/etc/direwolf.conf` using `infra/templates/direwolf.conf.j2`, including
+  SharPi audio defaults (`plughw:2,0`), PTT on `/dev/ttyUSB0` (RTS), optional
+  digipeater rules, and APRS-IS settings.
+- Installs the `direwolf.service`, `direwolf-display.service`, and `direwolf-tail.service`
+  units and reloads systemd.
+- Installs the `sa818` Python package and configures the SA818-based SharPi:
+  `scripts/run_direwolf.sh` auto-programs frequency, squelch, bandwidth, tones,
+  and filters via `uv run -- sa818 …` before launching Direwolf.
+- Generates the APRS-IS passcode automatically when `--rx-igate` is enabled and a
+  login (or callsign) is available; you can still supply `--igate-passcode` to force
+  a specific key.
+
+### Raspberry Pi Imager integration
+
+When customising Raspberry Pi Imager, reference `scripts/firstrun.sh` in the
+run-on-first-boot hook so the Pi clones this repository and provisions itself:
+
+```bash
+curl -fsSL https://github.com/emuehlstein/direwolf-display/archive/refs/heads/main.tar.gz \
+  | tar -xz --strip-components=1 -C /opt/direwolf-display-src && \
+sudo bash /opt/direwolf-display-src/scripts/firstrun.sh --callsign N0CALL-10 --digipeater --rx-igate
+```
+
+After the first boot completes, tail the services to confirm healthy startup:
+
+```bash
+journalctl -u direwolf-display -u direwolf-tail -f
+```
 
 3. **Validate**: open `http://<pi-hostname>:9090/` to view the map, and confirm
    `/stats` increments as packets arrive.
