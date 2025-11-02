@@ -10,8 +10,8 @@
     direwolf_display_repo_src: "/opt/direwolf-display-src"
     direwolf_audio_input: plughw:2,0
     direwolf_audio_output: plughw:2,0
-    direwolf_ptt_device: /dev/ttyUSB0
-    direwolf_ptt_line: RTS
+    direwolf_ptt_device: CM108
+    direwolf_ptt_line: DTR
     direwolf_ptt_extra: ""
     direwolf_callsign: NOCALL
     direwolf_latitude: "41^58.70N"
