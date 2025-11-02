@@ -14,6 +14,20 @@
     direwolf_ptt_line: RTS
     direwolf_ptt_extra: ""
     direwolf_callsign: NOCALL
+    direwolf_latitude: ""
+    direwolf_longitude: ""
+    direwolf_beacon_comment: "Direwolf Display"
+    direwolf_beacon_rf_enabled: true
+    direwolf_beacon_rf_delay: "0:30"
+    direwolf_beacon_rf_every: "30:00"
+    direwolf_beacon_rf_symbol: "digi"
+    direwolf_beacon_rf_overlay: S
+    direwolf_beacon_rf_via: WIDE1-1,WIDE2-1
+    direwolf_beacon_ig_enabled: true
+    direwolf_beacon_ig_delay: "0:30"
+    direwolf_beacon_ig_every: "5:00"
+    direwolf_beacon_ig_symbol: "igate"
+    direwolf_beacon_ig_overlay: R
     direwolf_enable_digipeater: false
     direwolf_digipeater_input: 0
     direwolf_digipeater_output: 0

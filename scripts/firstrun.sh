@@ -13,6 +13,9 @@ IGATE_SERVER=""
 IGATE_LOGIN=""
 IGATE_PASSCODE=""
 IGATE_FILTER=""
+LAT_DEC=""
+LON_DEC=""
+BEACON_COMMENT=""
 
 usage() {
   cat <<'EOF'
@@ -21,6 +24,9 @@ Usage: firstrun.sh [options]
 Options:
   --callsign <CALLSIGN>  Seed the Direwolf MYCALL value during provisioning.
   --dest <PATH>          Destination for the repository clone (default: /opt/direwolf-display-src).
+  --lat <DECIMAL>        Latitude in decimal degrees (e.g., 33.7991).
+  --lon <DECIMAL>        Longitude in decimal degrees (e.g., -84.2935).
+  --comment <TEXT>       APRS beacon comment text.
   --digipeater           Enable standard WIDEn-N digipeating (defaults provided).
   --digipeater-match <PATTERN>
                          Override the incoming path match regex.
@@ -46,6 +52,30 @@ while [[ $# -gt 0 ]]; do
         exit 1
       fi
       CALLSIGN="$2"
+      shift 2
+      ;;
+    --lat)
+      if [[ $# -lt 2 ]]; then
+        echo "Error: --lat requires a value." >&2
+        exit 1
+      fi
+      LAT_DEC="$2"
+      shift 2
+      ;;
+    --lon)
+      if [[ $# -lt 2 ]]; then
+        echo "Error: --lon requires a value." >&2
+        exit 1
+      fi
+      LON_DEC="$2"
+      shift 2
+      ;;
+    --comment)
+      if [[ $# -lt 2 ]]; then
+        echo "Error: --comment requires a value." >&2
+        exit 1
+      fi
+      BEACON_COMMENT="$2"
       shift 2
       ;;
     --dest|-d)
@@ -137,6 +167,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ -n "$LAT_DEC" && -z "$LON_DEC" ]] || [[ -z "$LAT_DEC" && -n "$LON_DEC" ]]; then
+  echo "Error: --lat and --lon must be provided together." >&2
+  exit 1
+fi
+
 if [[ -d "$REPO_DIR" ]]; then
   echo "[firstrun] Repository already exists at $REPO_DIR"
 else
@@ -147,6 +182,12 @@ fi
 postinstall_args=()
 if [[ -n "$CALLSIGN" ]]; then
   postinstall_args+=(--callsign "$CALLSIGN")
+fi
+if [[ -n "$LAT_DEC" ]]; then
+  postinstall_args+=(--lat "$LAT_DEC" --lon "$LON_DEC")
+fi
+if [[ -n "$BEACON_COMMENT" ]]; then
+  postinstall_args+=(--comment "$BEACON_COMMENT")
 fi
 if [[ "$DIGIPEATER" == true ]]; then
   postinstall_args+=(--digipeater)

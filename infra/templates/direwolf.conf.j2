@@ -7,6 +7,11 @@ MYCALL {{ direwolf_callsign }}
 MODEM 1200
 PTT {{ direwolf_ptt_device }} {{ direwolf_ptt_line }}{% if direwolf_ptt_extra %} {{ direwolf_ptt_extra }}{% endif %}
 
+{% set have_coords = direwolf_latitude and direwolf_longitude %}
+{% if have_coords and direwolf_beacon_rf_enabled %}
+PBEACON delay={{ direwolf_beacon_rf_delay }} every={{ direwolf_beacon_rf_every }} overlay={{ direwolf_beacon_rf_overlay }} symbol="{{ direwolf_beacon_rf_symbol }}" lat={{ direwolf_latitude }} long={{ direwolf_longitude }} comment="{{ direwolf_beacon_comment | replace('"', '\\"') }}"{% if direwolf_beacon_rf_via %} via={{ direwolf_beacon_rf_via }}{% endif %}
+{% endif %}
+
 {% if direwolf_enable_digipeater %}
 DIGIPEAT {{ direwolf_digipeater_input }} {{ direwolf_digipeater_output }} {{ direwolf_digipeater_match }} {{ direwolf_digipeater_replace }}{% if direwolf_digipeater_options %} {{ direwolf_digipeater_options }}{% endif %}
 {% endif %}
@@ -18,5 +23,8 @@ IGLOGIN {{ direwolf_igate_login or direwolf_callsign }} {{ direwolf_igate_passco
 {% endif %}
 {% if direwolf_igate_filter %}
 IGFILTER {{ direwolf_igate_filter }}
+{% endif %}
+{% if have_coords and direwolf_beacon_ig_enabled %}
+PBEACON sendto=IG delay={{ direwolf_beacon_ig_delay }} every={{ direwolf_beacon_ig_every }} symbol="{{ direwolf_beacon_ig_symbol }}" overlay={{ direwolf_beacon_ig_overlay }} lat={{ direwolf_latitude }} long={{ direwolf_longitude }} comment="{{ direwolf_beacon_comment | replace('"', '\\"') }}"
 {% endif %}
 {% endif %}

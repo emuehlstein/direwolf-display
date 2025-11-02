@@ -17,6 +17,9 @@ IGATE_SERVER=""
 IGATE_LOGIN=""
 IGATE_PASSCODE=""
 IGATE_FILTER=""
+LAT_DEC=""
+LON_DEC=""
+BEACON_COMMENT=""
 
 generate_aprs_passcode() {
   local call="$1"
@@ -26,12 +29,45 @@ generate_aprs_passcode() {
   python3 -m tools.aprs_passcode --callsign "$call"
 }
 
+format_latitude() {
+  python3 - "$1" <<'PY'
+import sys
+try:
+    value = float(sys.argv[1])
+except ValueError:
+    raise SystemExit(1)
+hemisphere = "N" if value >= 0 else "S"
+value = abs(value)
+degrees = int(value)
+minutes = (value - degrees) * 60
+print(f"{degrees:02d}^{minutes:05.2f}{hemisphere}")
+PY
+}
+
+format_longitude() {
+  python3 - "$1" <<'PY'
+import sys
+try:
+    value = float(sys.argv[1])
+except ValueError:
+    raise SystemExit(1)
+hemisphere = "E" if value >= 0 else "W"
+value = abs(value)
+degrees = int(value)
+minutes = (value - degrees) * 60
+print(f"{degrees:03d}^{minutes:05.2f}{hemisphere}")
+PY
+}
+
 usage() {
   cat <<'EOF'
 Usage: pi_postinstall.sh [options] [repo_dir]
 
 Options:
   --callsign <CALLSIGN>  Set the Direwolf MYCALL value during provisioning.
+  --lat <DECIMAL>        Latitude in decimal degrees (e.g., 33.7991).
+  --lon <DECIMAL>        Longitude in decimal degrees (e.g., -84.2935).
+  --comment <TEXT>       APRS beacon comment text.
   --digipeater           Enable standard WIDEn-N digipeating (defaults provided).
   --digipeater-match <PATTERN>
                          Override the incoming path match regex.
@@ -59,6 +95,30 @@ while [[ $# -gt 0 ]]; do
         exit 1
       fi
       CALLSIGN="$2"
+      shift 2
+      ;;
+    --lat)
+      if [[ $# -lt 2 ]]; then
+        echo "Error: --lat requires a value." >&2
+        exit 1
+      fi
+      LAT_DEC="$2"
+      shift 2
+      ;;
+    --lon)
+      if [[ $# -lt 2 ]]; then
+        echo "Error: --lon requires a value." >&2
+        exit 1
+      fi
+      LON_DEC="$2"
+      shift 2
+      ;;
+    --comment)
+      if [[ $# -lt 2 ]]; then
+        echo "Error: --comment requires a value." >&2
+        exit 1
+      fi
+      BEACON_COMMENT="$2"
       shift 2
       ;;
     --digipeater)
@@ -141,6 +201,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ -n "$LAT_DEC" && -z "$LON_DEC" ]] || [[ -z "$LAT_DEC" && -n "$LON_DEC" ]]; then
+  echo "Error: --lat and --lon must be provided together." >&2
+  exit 1
+fi
+
 if [[ $EUID -ne 0 ]]; then
   echo "This script must run as root (it installs packages and configures systemd)." >&2
   exit 1
@@ -177,6 +242,22 @@ if [[ "$DIGIPEATER" == true ]]; then
   fi
   if [[ -n "$DIGI_OPTIONS" ]]; then
     extra_vars+=("direwolf_digipeater_options=$DIGI_OPTIONS")
+  fi
+fi
+if [[ -n "$LAT_DEC" ]]; then
+  formatted_lat="$(format_latitude "$LAT_DEC")" || {
+    echo "Error: Invalid latitude value: $LAT_DEC" >&2
+    exit 1
+  }
+  formatted_lon="$(format_longitude "$LON_DEC")" || {
+    echo "Error: Invalid longitude value: $LON_DEC" >&2
+    exit 1
+  }
+  extra_vars+=("direwolf_latitude=$formatted_lat")
+  extra_vars+=("direwolf_longitude=$formatted_lon")
+  if [[ -n "$BEACON_COMMENT" ]]; then
+    escaped_comment=${BEACON_COMMENT//\"/\\\"}
+    extra_vars+=("direwolf_beacon_comment=\"${escaped_comment}\"")
   fi
 fi
 if [[ "$RX_IGATE" == true ]]; then

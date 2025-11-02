@@ -176,15 +176,21 @@ details during the initial boot:
 ```bash
 sudo ./scripts/firstrun.sh \
   --callsign N0CALL-10 \
+  --lat 33.7991 \
+  --lon -84.2935 \
+  --comment "ShariPi IGate" \
   --digipeater \
   --rx-igate \
-  --igate-login N0CALL-10 \
   --dest /opt/direwolf-display-src
 ```
 
 Flags you might care about:
 
-- `--callsign`: seeds the `MYCALL` line in Direwolf.
+- `--callsign`: seeds the `MYCALL` line in Direwolf and, when `--rx-igate` is
+  supplied, doubles as the APRS-IS login/passcode seed.
+- `--lat` / `--lon`: decimal-degree coordinates converted to APRS `DD^MM.mmH`
+  format for RF and IG beacons.
+- `--comment`: APRS status comment broadcast in both beacons.
 - `--digipeater`: enables a WIDEn-N-rule by default; use the `--digipeater-*`
   overrides to supply custom match/replace/options.
 - `--rx-igate`: connects to APRS-IS (default rotate: `noam.aprs2.net`); combine
@@ -204,8 +210,11 @@ independently on a Pi that already has this repository checked out:
 ```bash
 sudo ./scripts/pi_postinstall.sh \
   --callsign N0CALL-10 \
+  --lat 33.7991 \
+  --lon -84.2935 \
+  --comment "ShariPi IGate" \
   --digipeater \
-  --rx-igate --igate-login N0CALL-10 \
+  --rx-igate \
   /opt/direwolf-display-src
 ```
 
@@ -213,7 +222,8 @@ Highlights:
 
 - Writes `/etc/direwolf.conf` using `infra/templates/direwolf.conf.j2`, including
   SharPi audio defaults (`plughw:2,0`), PTT on `/dev/ttyUSB0` (RTS), optional
-  digipeater rules, and APRS-IS settings.
+  digipeater rules, APRS-IS settings, and RF/IG PBEACON entries when coordinates
+  are supplied.
 - Installs the `direwolf.service`, `direwolf-display.service`, and `direwolf-tail.service`
   units and reloads systemd.
 - Installs the `sa818` Python package and configures the SA818-based SharPi:
