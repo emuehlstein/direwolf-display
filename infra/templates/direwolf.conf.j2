@@ -1,5 +1,5 @@
 # Direwolf configuration managed by Ansible
-ADEVICE {{ direwolf_audio_input }}{% if direwolf_audio_output != direwolf_audio_input %} {{ direwolf_audio_output }}{% endif %}
+ADEVICE {{ direwolf_audio_input }} {{ direwolf_audio_output }}
 ACHANNELS 1
 ARATE 48000
 CHANNEL 0
