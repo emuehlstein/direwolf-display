@@ -8,6 +8,9 @@
     direwolf_display_home: /var/lib/direwolf
     direwolf_display_root: /opt/direwolf-display
     direwolf_display_repo_src: "/opt/direwolf-display-src"
+    direwolf_audio_output: plughw:2,0
+    direwolf_ptt_device: /dev/ttyUSB0
+    direwolf_ptt_line: RTS
     direwolf_display_services:
       - direwolf.service
       - direwolf-display.service
@@ -42,6 +45,8 @@
       ansible.builtin.user:
         name: "{{ direwolf_display_user }}"
         group: "{{ direwolf_display_group }}"
+        groups: dialout
+        append: true
         shell: /bin/bash
         home: "{{ direwolf_display_home }}"
         create_home: true
