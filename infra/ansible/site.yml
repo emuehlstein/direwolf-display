@@ -13,6 +13,18 @@
     direwolf_ptt_device: /dev/ttyUSB0
     direwolf_ptt_line: RTS
     direwolf_ptt_extra: ""
+    direwolf_callsign: NOCALL
+    direwolf_enable_digipeater: false
+    direwolf_digipeater_input: 0
+    direwolf_digipeater_output: 0
+    direwolf_digipeater_match: "^WIDE[3-7]-[1-7]$|^TEST$"
+    direwolf_digipeater_replace: "^WIDE[12]-[12]$"
+    direwolf_digipeater_options: "TRACE"
+    direwolf_enable_igate_rx: false
+    direwolf_igate_server: noam.aprs2.net
+    direwolf_igate_login: ""
+    direwolf_igate_passcode: ""
+    direwolf_igate_filter: ""
     sa818_enable: true
     sa818_speed: 9600
     sa818_frequency: "144.390"

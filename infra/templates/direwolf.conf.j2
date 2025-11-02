@@ -1,8 +1,22 @@
 # Direwolf configuration managed by Ansible
-ADEVICE {{ direwolf_audio_input }} {{ direwolf_audio_output }}
+ADEVICE {{ direwolf_audio_input }}{% if direwolf_audio_output != direwolf_audio_input %} {{ direwolf_audio_output }}{% endif %}
 ACHANNELS 1
 ARATE 48000
 CHANNEL 0
-MYCALL NOCALL
+MYCALL {{ direwolf_callsign }}
 MODEM 1200
 PTT {{ direwolf_ptt_device }} {{ direwolf_ptt_line }}{% if direwolf_ptt_extra %} {{ direwolf_ptt_extra }}{% endif %}
+
+{% if direwolf_enable_digipeater %}
+DIGIPEAT {{ direwolf_digipeater_input }} {{ direwolf_digipeater_output }} {{ direwolf_digipeater_match }} {{ direwolf_digipeater_replace }}{% if direwolf_digipeater_options %} {{ direwolf_digipeater_options }}{% endif %}
+{% endif %}
+
+{% if direwolf_enable_igate_rx %}
+IGSERVER {{ direwolf_igate_server }}
+{% if direwolf_igate_passcode %}
+IGLOGIN {{ direwolf_igate_login or direwolf_callsign }} {{ direwolf_igate_passcode }}
+{% endif %}
+{% if direwolf_igate_filter %}
+IGFILTER {{ direwolf_igate_filter }}
+{% endif %}
+{% endif %}
