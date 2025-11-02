@@ -184,12 +184,12 @@ if [[ "$RX_IGATE" == true ]]; then
   if [[ -n "$IGATE_SERVER" ]]; then
     extra_vars+=("direwolf_igate_server=$IGATE_SERVER")
   fi
-  if [[ -n "$IGATE_LOGIN" ]]; then
-    extra_vars+=("direwolf_igate_login=$IGATE_LOGIN")
+  login_call="${IGATE_LOGIN:-${CALLSIGN:-}}"
+  if [[ -n "$login_call" ]]; then
+    extra_vars+=("direwolf_igate_login=$login_call")
   fi
   passcode_to_use="$IGATE_PASSCODE"
   if [[ -z "$passcode_to_use" ]]; then
-    login_call="${IGATE_LOGIN:-${CALLSIGN:-}}"
     if [[ -n "$login_call" ]]; then
       if generated_passcode=$(generate_aprs_passcode "$login_call" 2>/dev/null); then
         passcode_to_use="$generated_passcode"

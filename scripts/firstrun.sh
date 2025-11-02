@@ -165,8 +165,9 @@ if [[ "$RX_IGATE" == true ]]; then
   if [[ -n "$IGATE_SERVER" ]]; then
     postinstall_args+=(--igate-server "$IGATE_SERVER")
   fi
-  if [[ -n "$IGATE_LOGIN" ]]; then
-    postinstall_args+=(--igate-login "$IGATE_LOGIN")
+  postinstall_login="${IGATE_LOGIN:-${CALLSIGN:-}}"
+  if [[ -n "$postinstall_login" ]]; then
+    postinstall_args+=(--igate-login "$postinstall_login")
   fi
   if [[ -n "$IGATE_PASSCODE" ]]; then
     postinstall_args+=(--igate-passcode "$IGATE_PASSCODE")

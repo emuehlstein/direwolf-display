@@ -172,3 +172,9 @@
         enabled: true
         state: started
       loop: "{{ direwolf_display_services }}"
+
+    - name: Restart Direwolf services to apply new configuration
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: restarted
+      loop: "{{ direwolf_display_services }}"
