@@ -12,6 +12,7 @@
     direwolf_audio_output: plughw:2,0
     direwolf_ptt_device: /dev/ttyUSB0
     direwolf_ptt_line: RTS
+    direwolf_ptt_extra: ""
     sa818_enable: true
     sa818_speed: 9600
     sa818_frequency: "144.390"

@@ -5,7 +5,7 @@ ARATE 48000
 CHANNEL 0
 MYCALL NOCALL
 MODEM 1200
-PTT RIG {{ direwolf_ptt_device }} {{ direwolf_ptt_line }}
+PTT {{ direwolf_ptt_device }} {{ direwolf_ptt_line }}{% if direwolf_ptt_extra %} {{ direwolf_ptt_extra }}{% endif %}
 
 # Logging configuration for CSV tailer
 LOGDIR /var/log/direwolf
