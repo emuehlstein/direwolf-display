@@ -8,6 +8,7 @@
     direwolf_display_home: /var/lib/direwolf
     direwolf_display_root: /opt/direwolf-display
     direwolf_display_repo_src: "/opt/direwolf-display-src"
+    direwolf_audio_input: plughw:2,0
     direwolf_audio_output: plughw:2,0
     direwolf_ptt_device: /dev/ttyUSB0
     direwolf_ptt_line: RTS
@@ -23,7 +24,6 @@
       - python3-venv
       - python3-pip
       - direwolf
-      - rtl-sdr
   pre_tasks:
     - name: Refresh apt cache
       ansible.builtin.apt:
