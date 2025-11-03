@@ -16,7 +16,6 @@ PTT {{ direwolf_ptt_device }} {{ direwolf_ptt_line }}{% if direwolf_ptt_extra %}
 TXDELAY {{ direwolf_tx_delay }}
 TXTAIL {{ direwolf_tx_tail }}
 DWAIT {{ direwolf_dwait }}
-TXGAIN {{ direwolf_tx_level }}
 
 {% set have_coords = direwolf_latitude and direwolf_longitude %}
 {% if have_coords and (direwolf_beacon_rf_enabled | bool) %}
