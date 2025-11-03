@@ -1,7 +1,7 @@
 # Direwolf configuration managed by Ansible
 ADEVICE {{ direwolf_audio_input }} {{ direwolf_audio_output }}
 ACHANNELS 1
-ARATE 48000
+ARATE {{ direwolf_sample_rate }}
 CHANNEL 0
 MYCALL {{ direwolf_callsign }}
 MODEM 1200

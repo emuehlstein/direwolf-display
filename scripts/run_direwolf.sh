@@ -2,7 +2,7 @@
 set -euo pipefail
 
 : "${DIREWOLF_CONFIG:=/etc/direwolf.conf}"
-: "${DIREWOLF_SAMPLE_RATE:=48000}"
+: "${DIREWOLF_SAMPLE_RATE:=44100}"
 : "${DIREWOLF_EXTRA_OPTS:=-l /var/log/direwolf}"
 : "${SA818_ENABLE:=1}"
 : "${SA818_PORT:=/dev/ttyUSB0}"
@@ -21,7 +21,7 @@ set -euo pipefail
 : "${RTL_FM_ENABLE:=0}"
 : "${RTL_FM_DEVICE:=0}"
 : "${RTL_FM_FREQUENCY:=144.390M}"
-: "${RTL_FM_SAMPLE_RATE:=48000}"
+: "${RTL_FM_SAMPLE_RATE:=44100}"
 : "${RTL_FM_GAIN:=}"
 : "${RTL_FM_PPM:=}"
 : "${RTL_FM_EXTRA_OPTS:=-l 0 -E deemp -E dc}"
