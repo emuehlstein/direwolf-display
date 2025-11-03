@@ -1,600 +1,727 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Direwolf Display</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"
-      integrity="sha256-QZFpF9DkpabUBLoCc7fQJVCmtag/LaVAfAkUJSfuNyY="
-      crossorigin="anonymous"
-    />
-    <style>
-      :root {
-        color-scheme: dark light;
-        font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Direwolf Display</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"
+    integrity="sha256-QZFpF9DkpabUBLoCc7fQJVCmtag/LaVAfAkUJSfuNyY=" crossorigin="anonymous" />
+  <style>
+    :root {
+      color-scheme: dark light;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #111;
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #app {
+      position: relative;
+      flex: 1 1 auto;
+      overflow: hidden;
+    }
+
+    #map {
+      position: absolute;
+      inset: 0;
+    }
+
+    .status-bar {
+      position: absolute;
+      inset: auto 1rem 1rem 1rem;
+      padding: 0.75rem 1rem;
+      background: rgba(0, 0, 0, 0.65);
+      border-radius: 0.5rem;
+      backdrop-filter: blur(6px);
+      font-size: 0.95rem;
+      line-height: 1.3;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .status-grid {
+      display: grid;
+      gap: 0.25rem 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+
+    .status-grid span {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .status-grid span strong {
+      font-weight: 600;
+      color: #8bd3ff;
+      margin-right: 0.5rem;
+    }
+
+    .status-message {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #c2c2c2;
+    }
+
+    a {
+      color: #8bd3ff;
+    }
+
+    .leaflet-marker-icon.station-highlight {
+      filter: drop-shadow(0 0 6px rgba(255, 209, 102, 0.85));
+    }
+
+    .leaflet-marker-icon.station-hover {
+      filter: drop-shadow(0 0 8px rgba(139, 211, 255, 0.9));
+    }
+
+    .pulse-ring {
+      pointer-events: none;
+    }
+
+    .pulse-ring__wave {
+      display: block;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(139, 211, 255, 0.85);
+      transform-origin: center;
+      animation: pulse-wave 2s ease-out forwards;
+    }
+
+    .pulse-ring--digipeater .pulse-ring__wave {
+      border-color: rgba(255, 209, 102, 0.95);
+    }
+
+    .pulse-ring--igate .pulse-ring__wave {
+      border-color: rgba(255, 107, 107, 0.95);
+    }
+
+    /* Trail dot styling */
+    .trail-dot {
+      background-color: rgba(139, 211, 255, 0.7);
+      border: 1px solid rgba(139, 211, 255, 0.9);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .trail-dot:hover {
+      background-color: rgba(139, 211, 255, 0.9);
+      border-color: rgba(139, 211, 255, 1);
+      transform: scale(1.2);
+    }
+
+    @keyframes pulse-wave {
+      0% {
+        transform: scale(0.3);
+        opacity: 0.9;
       }
 
-      body {
-        margin: 0;
-        background: #111;
-        color: #eee;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
+      60% {
+        transform: scale(1);
+        opacity: 0.3;
       }
 
-      #app {
-        position: relative;
-        flex: 1 1 auto;
-        overflow: hidden;
+      100% {
+        transform: scale(1.2);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div id="map" role="img" aria-label="Direwolf packet map"></div>
+    <section class="status-bar" aria-live="polite">
+      <div class="status-grid">
+        <span><strong>Packets</strong><output id="packets-count">0</output></span>
+        <span><strong>RSSI</strong><output id="rssi-count">0</output></span>
+        <span><strong>Stations</strong><output id="stations-count">0</output></span>
+      </div>
+      <p class="status-message" id="status-message">
+        Connecting to stream…
+      </p>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"
+    integrity="sha256-MgH13bFTTNqsnuEoqNPBLDaqxjGH+lCpqrukmXc8Ppg=" crossorigin="anonymous"></script>
+  <script>
+    (function () {
+      const packetMarkers = new Map();
+      const map = L.map("map", {
+        worldCopyJump: true,
+      }).setView([39, -98], 4);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
+
+      const packetsOutput = document.querySelector("#packets-count");
+      const rssiOutput = document.querySelector("#rssi-count");
+      const stationsOutput = document.querySelector("#stations-count");
+      const statusMessage = document.querySelector("#status-message");
+
+      const stationTrails = new Map();
+      const stationTrailDots = new Map(); // Store clickable dots for each trail position
+      const historyLimit = 20;
+      const stationRegistry = new Map();
+      const activePathLayers = [];
+      const highlightedMarkers = new Map();
+      let baseStatusText = statusMessage.textContent.trim() || "Connecting to stream…";
+
+      function setBaseStatus(text) {
+        baseStatusText = text;
+        statusMessage.textContent = text;
       }
 
-      #map {
-        position: absolute;
-        inset: 0;
+      function setTemporaryStatus(text) {
+        statusMessage.textContent = text;
       }
 
-      .status-bar {
-        position: absolute;
-        inset: auto 1rem 1rem 1rem;
-        padding: 0.75rem 1rem;
-        background: rgba(0, 0, 0, 0.65);
-        border-radius: 0.5rem;
-        backdrop-filter: blur(6px);
-        font-size: 0.95rem;
-        line-height: 1.3;
-        z-index: 1000;
-        pointer-events: none;
+      function resetStatusText() {
+        statusMessage.textContent = baseStatusText;
       }
 
-      .status-grid {
-        display: grid;
-        gap: 0.25rem 1.5rem;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      function updateStats(data) {
+        if (typeof data.packets === "number") packetsOutput.value = data.packets;
+        if (typeof data.rssi_samples === "number") rssiOutput.value = data.rssi_samples;
+        if (typeof data.stations_tracked === "number") stationsOutput.value = data.stations_tracked;
       }
 
-      .status-grid span {
-        display: flex;
-        justify-content: space-between;
-      }
-
-      .status-grid span strong {
-        font-weight: 600;
-        color: #8bd3ff;
-        margin-right: 0.5rem;
-      }
-
-      .status-message {
-        margin-top: 0.5rem;
-        font-size: 0.85rem;
-        color: #c2c2c2;
-      }
-
-      a {
-        color: #8bd3ff;
-      }
-
-      .leaflet-marker-icon.station-highlight {
-        filter: drop-shadow(0 0 6px rgba(255, 209, 102, 0.85));
-      }
-
-      .leaflet-marker-icon.station-hover {
-        filter: drop-shadow(0 0 8px rgba(139, 211, 255, 0.9));
-      }
-
-      .pulse-ring {
-        pointer-events: none;
-      }
-
-      .pulse-ring__wave {
-        display: block;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        border: 2px solid rgba(139, 211, 255, 0.85);
-        transform-origin: center;
-        animation: pulse-wave 1.8s ease-out infinite;
-      }
-
-      .pulse-ring--digipeater .pulse-ring__wave {
-        border-color: rgba(255, 209, 102, 0.95);
-      }
-
-      .pulse-ring--igate .pulse-ring__wave {
-        border-color: rgba(255, 107, 107, 0.95);
-      }
-
-      @keyframes pulse-wave {
-        0% {
-          transform: scale(0.3);
-          opacity: 0.9;
+      async function refreshStats() {
+        try {
+          const response = await fetch("/stats");
+          if (!response.ok) {
+            throw new Error(`Stats request failed (${response.status})`);
+          }
+          const payload = await response.json();
+          updateStats(payload);
+        } catch (error) {
+          console.warn("Unable to refresh stats", error);
         }
-        60% {
-          transform: scale(1);
-          opacity: 0.3;
-        }
-        100% {
-          transform: scale(1.2);
-          opacity: 0;
+      }
+
+      async function loadRecentStations() {
+        try {
+          const response = await fetch("/v1/stations?within_seconds=3600");
+          if (!response.ok) {
+            throw new Error(`Stations request failed (${response.status})`);
+          }
+          const stations = await response.json();
+          stations.forEach(addPacketMarker);
+          if (stations.length > 0) {
+            setBaseStatus(`Loaded ${stations.length} stations from the last hour.`);
+          }
+        } catch (error) {
+          console.warn("Unable to load recent stations", error);
         }
       }
-    </style>
-  </head>
-  <body>
-    <div id="app">
-      <div id="map" role="img" aria-label="Direwolf packet map"></div>
-      <section class="status-bar" aria-live="polite">
-        <div class="status-grid">
-          <span><strong>Packets</strong><output id="packets-count">0</output></span>
-          <span><strong>RSSI</strong><output id="rssi-count">0</output></span>
-          <span><strong>Stations</strong><output id="stations-count">0</output></span>
-        </div>
-        <p class="status-message" id="status-message">
-          Connecting to stream…
-        </p>
-      </section>
-    </div>
 
-    <script
-      src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"
-      integrity="sha256-MgH13bFTTNqsnuEoqNPBLDaqxjGH+lCpqrukmXc8Ppg="
-      crossorigin="anonymous"
-    ></script>
-    <script>
-      (function () {
-        const packetMarkers = new Map();
-        const map = L.map("map", {
-          worldCopyJump: true,
-        }).setView([39, -98], 4);
-
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          maxZoom: 19,
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        }).addTo(map);
-
-        const packetsOutput = document.querySelector("#packets-count");
-        const rssiOutput = document.querySelector("#rssi-count");
-        const stationsOutput = document.querySelector("#stations-count");
-        const statusMessage = document.querySelector("#status-message");
-
-        const stationTrails = new Map();
-        const historyLimit = 20;
-        const stationRegistry = new Map();
-        const activePathLayers = [];
-        const highlightedMarkers = new Map();
-        let baseStatusText = statusMessage.textContent.trim() || "Connecting to stream…";
-
-        function setBaseStatus(text) {
-          baseStatusText = text;
-          statusMessage.textContent = text;
+      function parsePathEntries(pathArray) {
+        if (!Array.isArray(pathArray)) {
+          return [];
         }
-
-        function setTemporaryStatus(text) {
-          statusMessage.textContent = text;
-        }
-
-        function resetStatusText() {
-          statusMessage.textContent = baseStatusText;
-        }
-
-        function updateStats(data) {
-          if (typeof data.packets === "number") packetsOutput.value = data.packets;
-          if (typeof data.rssi_samples === "number") rssiOutput.value = data.rssi_samples;
-          if (typeof data.stations_tracked === "number") stationsOutput.value = data.stations_tracked;
-        }
-
-        async function refreshStats() {
-          try {
-            const response = await fetch("/stats");
-            if (!response.ok) {
-              throw new Error(`Stats request failed (${response.status})`);
+        return pathArray
+          .map((value) => {
+            if (typeof value !== "string") {
+              return null;
             }
-            const payload = await response.json();
-            updateStats(payload);
-          } catch (error) {
-            console.warn("Unable to refresh stats", error);
+            const trimmed = value.trim();
+            if (!trimmed) {
+              return null;
+            }
+            const used = trimmed.endsWith("*");
+            const clean = used ? trimmed.slice(0, -1) : trimmed;
+            const hyphenIndex = clean.lastIndexOf("-");
+            let prefix = clean;
+            let suffix = null;
+            if (hyphenIndex > 0) {
+              prefix = clean.slice(0, hyphenIndex);
+              suffix = clean.slice(hyphenIndex + 1);
+            }
+            const aliasPattern = /^(WIDE|TRACE|RELAY|ECHO|SAR)[0-9A-Z]*$/i;
+            const alias = aliasPattern.test(prefix);
+            const suffixIsNumber = suffix != null && /^\d+$/.test(suffix);
+            const ssid = !alias && suffixIsNumber ? Number.parseInt(suffix, 10) : null;
+            const remaining = alias && suffixIsNumber ? Number.parseInt(suffix, 10) : null;
+            return {
+              raw: trimmed,
+              callsign: clean,
+              used,
+              alias,
+              prefix,
+              ssid,
+              remaining,
+            };
+          })
+          .filter(Boolean);
+      }
+
+      function formatTooltip(payload) {
+        const callsign = payload.source_callsign || "Unknown";
+        const time = payload.timestamp || payload.unix_time;
+        const numericSpeed = Number(payload.speed);
+        const numericCourse = Number(payload.course);
+        const comment = payload.comment || payload.status || "";
+        const heardBy = payload.destination_callsign ? `Heard by ${payload.destination_callsign}` : "";
+
+        // Improve path display - show destination for direct paths
+        let pathSummary;
+        if (Array.isArray(payload.path) && payload.path.length) {
+          pathSummary = payload.path.join(" ➔ ");
+        } else {
+          // For direct paths, show the destination if available
+          if (payload.destination_callsign) {
+            pathSummary = `Direct to ${payload.destination_callsign}`;
+          } else {
+            pathSummary = "Direct";
           }
         }
 
-        async function loadRecentStations() {
-          try {
-            const response = await fetch("/v1/stations?within_seconds=3600");
-            if (!response.ok) {
-              throw new Error(`Stations request failed (${response.status})`);
-            }
-            const stations = await response.json();
-            stations.forEach(addPacketMarker);
-            if (stations.length > 0) {
-              setBaseStatus(`Loaded ${stations.length} stations from the last hour.`);
-            }
-          } catch (error) {
-            console.warn("Unable to load recent stations", error);
-          }
+        const segments = [
+          `<strong>${callsign}</strong>`,
+          `<small>${time || "No timestamp"}</small>`,
+        ];
+
+        // Only show speed if it's not zero and is a valid number
+        if (Number.isFinite(numericSpeed) && numericSpeed > 0) {
+          segments.push(`<span>Speed: ${numericSpeed.toFixed(1)} km/h</span>`);
         }
 
-        function parsePathEntries(pathArray) {
-          if (!Array.isArray(pathArray)) {
-            return [];
-          }
-          return pathArray
-            .map((value) => {
-              if (typeof value !== "string") {
-                return null;
-              }
-              const trimmed = value.trim();
-              if (!trimmed) {
-                return null;
-              }
-              const used = trimmed.endsWith("*");
-              const clean = used ? trimmed.slice(0, -1) : trimmed;
-              const hyphenIndex = clean.lastIndexOf("-");
-              let prefix = clean;
-              let suffix = null;
-              if (hyphenIndex > 0) {
-                prefix = clean.slice(0, hyphenIndex);
-                suffix = clean.slice(hyphenIndex + 1);
-              }
-              const aliasPattern = /^(WIDE|TRACE|RELAY|ECHO|SAR)[0-9A-Z]*$/i;
-              const alias = aliasPattern.test(prefix);
-              const suffixIsNumber = suffix != null && /^\d+$/.test(suffix);
-              const ssid = !alias && suffixIsNumber ? Number.parseInt(suffix, 10) : null;
-              const remaining = alias && suffixIsNumber ? Number.parseInt(suffix, 10) : null;
-              return {
-                raw: trimmed,
-                callsign: clean,
-                used,
-                alias,
-                prefix,
-                ssid,
-                remaining,
-              };
-            })
-            .filter(Boolean);
+        // Only show course if it's not zero and is a valid number
+        if (Number.isFinite(numericCourse) && numericCourse > 0) {
+          segments.push(`<span>Course: ${numericCourse.toFixed(0)}°</span>`);
         }
 
-        function formatTooltip(payload) {
-          const callsign = payload.source_callsign || "Unknown";
-          const time = payload.timestamp || payload.unix_time;
-          const numericSpeed = Number(payload.speed);
-          const speed = Number.isFinite(numericSpeed) ? `${numericSpeed.toFixed(1)} km/h` : "n/a";
-          const numericCourse = Number(payload.course);
-          const course = Number.isFinite(numericCourse) ? `${numericCourse.toFixed(0)}°` : "n/a";
-          const comment = payload.comment || payload.status || "";
-          const heardBy = payload.destination_callsign ? `Heard by ${payload.destination_callsign}` : "";
-          const pathSummary =
-            Array.isArray(payload.path) && payload.path.length ? payload.path.join(" ➔ ") : "Direct";
+        segments.push(`<span>Path: ${pathSummary}</span>`);
 
-          const segments = [
-            `<strong>${callsign}</strong>`,
-            `<small>${time || "No timestamp"}</small>`,
-            `<span>Speed: ${speed}</span>`,
-            `<span>Course: ${course}</span>`,
-            `<span>Path: ${pathSummary}</span>`,
-          ];
-          if (heardBy) {
-            segments.push(`<span>${heardBy}</span>`);
-          }
-          if (comment) {
-            segments.push(`<span>${comment}</span>`);
-          }
-
-          return `<div class="tooltip">${segments.join("<br />")}</div>`;
+        if (heardBy) {
+          segments.push(`<span>${heardBy}</span>`);
+        }
+        if (comment) {
+          segments.push(`<span>${comment}</span>`);
         }
 
-        function registerStation(callsign, marker, payload, lat, lon) {
-          if (!callsign) {
-            return;
-          }
-          stationRegistry.set(callsign, {
-            marker,
-            lastPayload: payload,
-            lat,
-            lon,
-            updatedAt: Date.now(),
-          });
-        }
+        return `<div class="tooltip">${segments.join("<br />")}</div>`;
+      }
 
-        function getStationLatLng(callsign, payload, role) {
-          if (!callsign) {
-            return null;
-          }
-          const registry = stationRegistry.get(callsign);
-          if (registry) {
-            const markerLatLng = registry.marker?.getLatLng?.();
-            if (markerLatLng) {
-              return markerLatLng;
-            }
-            if (typeof registry.lat === "number" && typeof registry.lon === "number") {
-              return L.latLng(registry.lat, registry.lon);
-            }
-          }
-          const marker = packetMarkers.get(callsign);
-          if (marker) {
-            const latLng = marker.getLatLng();
-            if (latLng) {
-              return latLng;
-            }
-          }
-          const trail = stationTrails.get(callsign);
-          if (trail && trail.length) {
-            const [tLat, tLon] = trail[trail.length - 1];
-            return L.latLng(tLat, tLon);
-          }
-          if (
-            role === "source" &&
-            typeof payload?.latitude === "number" &&
-            typeof payload?.longitude === "number"
-          ) {
-            return L.latLng(payload.latitude, payload.longitude);
-          }
+      function registerStation(callsign, marker, payload, lat, lon) {
+        if (!callsign) {
+          return;
+        }
+        stationRegistry.set(callsign, {
+          marker,
+          lastPayload: payload,
+          lat,
+          lon,
+          updatedAt: Date.now(),
+        });
+      }
+
+      function getStationLatLng(callsign, payload, role) {
+        if (!callsign) {
           return null;
         }
-
-        function highlightMarker(callsign, className = "station-highlight") {
-          const registry = stationRegistry.get(callsign);
-          const marker = registry?.marker || packetMarkers.get(callsign);
-          if (!marker) {
-            return;
+        const registry = stationRegistry.get(callsign);
+        if (registry) {
+          const markerLatLng = registry.marker?.getLatLng?.();
+          if (markerLatLng) {
+            return markerLatLng;
           }
-          const element = marker.getElement();
-          if (!element) {
-            return;
+          if (typeof registry.lat === "number" && typeof registry.lon === "number") {
+            return L.latLng(registry.lat, registry.lon);
           }
-          element.classList.add(className);
-          if (!highlightedMarkers.has(marker)) {
-            highlightedMarkers.set(marker, new Set());
-          }
-          highlightedMarkers.get(marker).add(className);
         }
-
-        function createPulse(callsign, variant, payload, role) {
-          const latLng = getStationLatLng(callsign, payload, role);
-          if (!latLng) {
-            return;
+        const marker = packetMarkers.get(callsign);
+        if (marker) {
+          const latLng = marker.getLatLng();
+          if (latLng) {
+            return latLng;
           }
-          const pulse = L.marker(latLng, {
-            icon: L.divIcon({
-              className: `pulse-ring pulse-ring--${variant}`,
-              html: '<span class="pulse-ring__wave"></span>',
-              iconSize: [30, 30],
-              iconAnchor: [15, 15],
-            }),
-            interactive: false,
-          }).addTo(map);
+        }
+        const trail = stationTrails.get(callsign);
+        if (trail && trail.length) {
+          const lastPoint = trail[trail.length - 1];
+          if (lastPoint.coords) {
+            const [tLat, tLon] = lastPoint.coords;
+            return L.latLng(tLat, tLon);
+          } else {
+            // Fallback for old format
+            const [tLat, tLon] = lastPoint;
+            return L.latLng(tLat, tLon);
+          }
+        }
+        if (
+          role === "source" &&
+          typeof payload?.latitude === "number" &&
+          typeof payload?.longitude === "number"
+        ) {
+          return L.latLng(payload.latitude, payload.longitude);
+        }
+        return null;
+      }
+
+      function highlightMarker(callsign, className = "station-highlight") {
+        const registry = stationRegistry.get(callsign);
+        const marker = registry?.marker || packetMarkers.get(callsign);
+        if (!marker) {
+          return;
+        }
+        const element = marker.getElement();
+        if (!element) {
+          return;
+        }
+        element.classList.add(className);
+        if (!highlightedMarkers.has(marker)) {
+          highlightedMarkers.set(marker, new Set());
+        }
+        highlightedMarkers.get(marker).add(className);
+      }
+
+      function createPulse(callsign, variant, payload, role, autocleanup = false) {
+        const latLng = getStationLatLng(callsign, payload, role);
+        if (!latLng) {
+          return;
+        }
+        const pulse = L.marker(latLng, {
+          icon: L.divIcon({
+            className: `pulse-ring pulse-ring--${variant}`,
+            html: '<span class="pulse-ring__wave"></span>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+          }),
+          interactive: false,
+        }).addTo(map);
+
+        if (autocleanup) {
+          // Automatically remove the pulse after animation completes (2 seconds)
+          setTimeout(() => {
+            if (map.hasLayer(pulse)) {
+              map.removeLayer(pulse);
+            }
+          }, 2000);
+        } else {
+          // For manual cleanup (hover effects)
           activePathLayers.push(pulse);
         }
+      }
 
-        function clearPathLayers(options = {}) {
-          while (activePathLayers.length) {
-            const layer = activePathLayers.pop();
-            if (layer && map.hasLayer(layer)) {
-              map.removeLayer(layer);
-            }
-          }
-          highlightedMarkers.forEach((classes, marker) => {
-            const element = marker.getElement();
-            if (element) {
-              classes.forEach((cls) => element.classList.remove(cls));
-            }
-          });
-          highlightedMarkers.clear();
-          if (!options.preserveStatus) {
-            resetStatusText();
-          }
-        }
+      function createTrailDot(callsign, lat, lon, payload, isLatest = false) {
+        const dotIcon = L.divIcon({
+          className: 'trail-dot',
+          html: '',
+          iconSize: isLatest ? [8, 8] : [6, 6],
+          iconAnchor: isLatest ? [4, 4] : [3, 3],
+        });
 
-        function showPathForPayload(payload, hoveredCallsign) {
-          if (!payload) {
-            return;
-          }
-          clearPathLayers({ preserveStatus: true });
-          const entries = parsePathEntries(payload.path);
-          const nodes = [];
-          if (payload.source_callsign) {
-            nodes.push({ callsign: payload.source_callsign, role: "source" });
-          }
-          entries.forEach((entry) => {
-            nodes.push({
-              callsign: entry.callsign,
-              role: entry.alias ? "alias" : "digipeater",
-              entry,
-            });
-          });
-          if (
-            payload.destination_callsign &&
-            (!nodes.length || nodes[nodes.length - 1].callsign !== payload.destination_callsign)
-          ) {
-            nodes.push({ callsign: payload.destination_callsign, role: "heard" });
-          }
+        const dot = L.marker([lat, lon], {
+          icon: dotIcon,
+          title: `${callsign} report`,
+          zIndexOffset: isLatest ? 100 : 50,
+        });
 
-          const summary = entries.length ? entries.map((entry) => entry.raw).join(" ➔ ") : "Direct";
-          setTemporaryStatus(`Path: ${summary}`);
-
-          if (nodes.length >= 2) {
-            for (let i = 0; i < nodes.length - 1; i += 1) {
-              const fromNode = nodes[i];
-              const toNode = nodes[i + 1];
-              if (fromNode.callsign === toNode.callsign) {
-                continue;
-              }
-              const fromLatLng = getStationLatLng(fromNode.callsign, payload, fromNode.role);
-              const toLatLng = getStationLatLng(toNode.callsign, payload, toNode.role);
-              if (!fromLatLng || !toLatLng) {
-                continue;
-              }
-              const entry = entries[i] || null;
-              const options = {
-                color: "#8bd3ff",
-                weight: 3,
-                opacity: 0.85,
-                dashArray: entry && entry.alias ? "6 6" : undefined,
-              };
-              if (entry?.used) {
-                options.color = "#ffd166";
-                options.weight = 4;
-              } else if (!entry && toNode.role === "heard") {
-                options.color = "#fcbf49";
-                options.dashArray = "2 8";
-              }
-              const polyline = L.polyline([fromLatLng, toLatLng], options).addTo(map);
-              activePathLayers.push(polyline);
-            }
-          }
-
-          if (payload.source_callsign) {
-            highlightMarker(payload.source_callsign, "station-hover");
-          }
-          if (hoveredCallsign && hoveredCallsign !== payload.source_callsign) {
-            highlightMarker(hoveredCallsign, "station-highlight");
-          }
-          entries
-            .filter((entry) => entry.used)
-            .forEach((entry) => {
-              createPulse(entry.callsign, "digipeater", payload, "digipeater");
-              highlightMarker(entry.callsign, "station-highlight");
-            });
-          if (payload.destination_callsign) {
-            createPulse(payload.destination_callsign, "igate", payload, "heard");
-            highlightMarker(payload.destination_callsign, "station-highlight");
-          }
-        }
-
-        function addPacketMarker(payload) {
-          const lat = payload.latitude ?? payload.lat ?? null;
-          const lon = payload.longitude ?? payload.lng ?? payload.lon ?? null;
-          if (typeof lat !== "number" || typeof lon !== "number") {
-            return;
-          }
-
-          const callsign = payload.source_callsign || `Station-${packetMarkers.size + 1}`;
-          let marker = packetMarkers.get(callsign);
-
-          if (!marker) {
-            const icon = L.icon({
-              iconUrl: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-icon.png",
-              iconRetinaUrl:
-                "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-              shadowUrl: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-shadow.png",
-              iconSize: [25, 41],
-              iconAnchor: [12, 41],
-              popupAnchor: [1, -34],
-              shadowSize: [41, 41],
-            });
-
-            marker = L.marker([lat, lon], {
-              icon,
-              title: callsign,
-            });
-            marker.addTo(map);
-            marker.on("mouseover", () => {
-              const metaPayload = marker?.aprsMeta?.lastPayload;
-              if (metaPayload) {
-                showPathForPayload(metaPayload, callsign);
-              }
-            });
-            marker.on("mouseout", () => {
-              clearPathLayers();
-            });
-            packetMarkers.set(callsign, marker);
-          } else {
-            marker.setLatLng([lat, lon]);
-          }
-
+        // When clicked, show the path routing to this specific report
+        dot.on('click', () => {
+          showPathForPayload(payload, callsign);
+          // Also show a popup with report details
           const popupContent = formatTooltip(payload);
-          if (marker.getPopup()) {
-            marker.setPopupContent(popupContent);
-          } else {
-            marker.bindPopup(popupContent);
-          }
+          dot.bindPopup(popupContent).openPopup();
+        });
 
-          marker.aprsMeta = marker.aprsMeta || {};
-          marker.aprsMeta.lastPayload = payload;
+        dot.on('mouseover', () => {
+          showPathForPayload(payload, callsign);
+        });
 
-          let trail = stationTrails.get(callsign);
-          if (!trail) {
-            trail = [];
-            stationTrails.set(callsign, trail);
-          }
+        dot.on('mouseout', () => {
+          clearPathLayers();
+        });
 
-          trail.push([lat, lon]);
-          if (trail.length > historyLimit) {
-            trail.shift();
-          }
+        dot.addTo(map);
+        return dot;
+      }
 
-          if (!trail.polyline) {
-            trail.polyline = L.polyline(trail, {
-              color: "#8bd3ff",
-              weight: 2,
-              opacity: 0.6,
-            }).addTo(map);
-          } else {
-            trail.polyline.setLatLngs(trail);
-          }
-
-          registerStation(callsign, marker, payload, lat, lon);
-        }
-
-        function handlePacketEvent(event) {
-          try {
-            const payload = JSON.parse(event.data);
-            addPacketMarker(payload);
-          } catch (error) {
-            console.warn("Unable to process packet event", error);
+      function clearPathLayers(options = {}) {
+        while (activePathLayers.length) {
+          const layer = activePathLayers.pop();
+          if (layer && map.hasLayer(layer)) {
+            map.removeLayer(layer);
           }
         }
-
-        function handleRssiEvent(event) {
-          try {
-            const payload = JSON.parse(event.data);
-            const info = `${payload.dbm.toFixed(1)} dBm @ ${payload.frequency_mhz.toFixed(2)} MHz`;
-            setBaseStatus(`Latest RSSI: ${info}`);
-          } catch (error) {
-            console.warn("Unable to process RSSI event", error);
+        highlightedMarkers.forEach((classes, marker) => {
+          const element = marker.getElement();
+          if (element) {
+            classes.forEach((cls) => element.classList.remove(cls));
           }
+        });
+        highlightedMarkers.clear();
+        if (!options.preserveStatus) {
+          resetStatusText();
+        }
+      }
+
+      function showPathForPayload(payload, hoveredCallsign) {
+        if (!payload) {
+          return;
+        }
+        clearPathLayers({ preserveStatus: true });
+        const entries = parsePathEntries(payload.path);
+        const nodes = [];
+        if (payload.source_callsign) {
+          nodes.push({ callsign: payload.source_callsign, role: "source" });
+        }
+        entries.forEach((entry) => {
+          nodes.push({
+            callsign: entry.callsign,
+            role: entry.alias ? "alias" : "digipeater",
+            entry,
+          });
+        });
+        if (
+          payload.destination_callsign &&
+          (!nodes.length || nodes[nodes.length - 1].callsign !== payload.destination_callsign)
+        ) {
+          nodes.push({ callsign: payload.destination_callsign, role: "heard" });
         }
 
-        function handleHeartbeat(event) {
-          try {
-            const payload = JSON.parse(event.data);
-            if (payload.timestamp) {
-              setBaseStatus(`Connected – heartbeat ${payload.timestamp}`);
+        const summary = entries.length ? entries.map((entry) => entry.raw).join(" ➔ ") : "Direct";
+        setTemporaryStatus(`Path: ${summary}`);
+
+        if (nodes.length >= 2) {
+          for (let i = 0; i < nodes.length - 1; i += 1) {
+            const fromNode = nodes[i];
+            const toNode = nodes[i + 1];
+            if (fromNode.callsign === toNode.callsign) {
+              continue;
             }
-          } catch (error) {
-            console.warn("Unable to process heartbeat event", error);
+            const fromLatLng = getStationLatLng(fromNode.callsign, payload, fromNode.role);
+            const toLatLng = getStationLatLng(toNode.callsign, payload, toNode.role);
+            if (!fromLatLng || !toLatLng) {
+              continue;
+            }
+            const entry = entries[i] || null;
+            const options = {
+              color: "#8bd3ff",
+              weight: 3,
+              opacity: 0.85,
+              dashArray: entry && entry.alias ? "6 6" : undefined,
+            };
+            if (entry?.used) {
+              options.color = "#ffd166";
+              options.weight = 4;
+            } else if (!entry && toNode.role === "heard") {
+              options.color = "#fcbf49";
+              options.dashArray = "2 8";
+            }
+            const polyline = L.polyline([fromLatLng, toLatLng], options).addTo(map);
+            activePathLayers.push(polyline);
           }
         }
 
-        function handleOpen() {
-          setBaseStatus("Connected to live stream.");
+        if (payload.source_callsign) {
+          highlightMarker(payload.source_callsign, "station-hover");
+        }
+        if (hoveredCallsign && hoveredCallsign !== payload.source_callsign) {
+          highlightMarker(hoveredCallsign, "station-highlight");
+        }
+        entries
+          .filter((entry) => entry.used)
+          .forEach((entry) => {
+            createPulse(entry.callsign, "digipeater", payload, "digipeater");
+            highlightMarker(entry.callsign, "station-highlight");
+          });
+        if (payload.destination_callsign) {
+          createPulse(payload.destination_callsign, "igate", payload, "heard");
+          highlightMarker(payload.destination_callsign, "station-highlight");
+        }
+      }
+
+      function addPacketMarker(payload) {
+        const lat = payload.latitude ?? payload.lat ?? null;
+        const lon = payload.longitude ?? payload.lng ?? payload.lon ?? null;
+        if (typeof lat !== "number" || typeof lon !== "number") {
+          return;
         }
 
-        function handleError(event, readyState) {
-          console.error("SSE stream error", { event, readyState });
-          const stateLabel =
-            readyState === EventSource.CLOSED
-              ? "closed"
-              : readyState === EventSource.CONNECTING
+        const callsign = payload.source_callsign || `Station-${packetMarkers.size + 1}`;
+        let marker = packetMarkers.get(callsign);
+
+        if (!marker) {
+          const icon = L.icon({
+            iconUrl: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-icon.png",
+            iconRetinaUrl:
+              "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+            shadowUrl: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-shadow.png",
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41],
+          });
+
+          marker = L.marker([lat, lon], {
+            icon,
+            title: callsign,
+          });
+          marker.addTo(map);
+          marker.on("mouseover", () => {
+            const metaPayload = marker?.aprsMeta?.lastPayload;
+            if (metaPayload) {
+              showPathForPayload(metaPayload, callsign);
+            }
+          });
+          marker.on("mouseout", () => {
+            clearPathLayers();
+          });
+          packetMarkers.set(callsign, marker);
+        } else {
+          marker.setLatLng([lat, lon]);
+        }
+
+        const popupContent = formatTooltip(payload);
+        if (marker.getPopup()) {
+          marker.setPopupContent(popupContent);
+        } else {
+          marker.bindPopup(popupContent);
+        }
+
+        marker.aprsMeta = marker.aprsMeta || {};
+        marker.aprsMeta.lastPayload = payload;
+
+        let trail = stationTrails.get(callsign);
+        if (!trail) {
+          trail = [];
+          stationTrails.set(callsign, trail);
+        }
+
+        // Get or create trail dots array for this station
+        let trailDots = stationTrailDots.get(callsign);
+        if (!trailDots) {
+          trailDots = [];
+          stationTrailDots.set(callsign, trailDots);
+        }
+
+        // Add new position to trail with payload data
+        const trailPoint = {
+          lat: lat,
+          lon: lon,
+          payload: payload,
+          coords: [lat, lon] // For polyline compatibility
+        };
+        trail.push(trailPoint);
+
+        // Create a dot for this position report (not the latest since it's shown as main marker)
+        if (trail.length > 1) {
+          // Create dot for the previous position (now that we have a new one)
+          const prevPoint = trail[trail.length - 2];
+
+          // Only create dot if we don't already have one for this position
+          if (trailDots.length < trail.length - 1) {
+            const dot = createTrailDot(callsign, prevPoint.lat, prevPoint.lon, prevPoint.payload, false);
+            trailDots.push(dot);
+          }
+        }
+
+        // Remove old trail points and dots if we exceed the limit
+        if (trail.length > historyLimit) {
+          trail.shift();
+          // Remove the oldest dot
+          if (trailDots.length > 0) {
+            const oldDot = trailDots.shift();
+            if (oldDot && map.hasLayer(oldDot)) {
+              map.removeLayer(oldDot);
+            }
+          }
+        }
+
+        // Update the polyline (extract coordinates for polyline)
+        const coords = trail.map(point => point.coords);
+        if (!trail.polyline) {
+          trail.polyline = L.polyline(coords, {
+            color: "#8bd3ff",
+            weight: 2,
+            opacity: 0.6,
+          }).addTo(map);
+        } else {
+          trail.polyline.setLatLngs(coords);
+        }
+
+        // Create a pulse for the sending station when a new packet is received
+        if (payload.source_callsign) {
+          createPulse(payload.source_callsign, "digipeater", payload, "source", true);
+        }
+
+        registerStation(callsign, marker, payload, lat, lon);
+      }
+
+      function handlePacketEvent(event) {
+        try {
+          const payload = JSON.parse(event.data);
+          addPacketMarker(payload);
+        } catch (error) {
+          console.warn("Unable to process packet event", error);
+        }
+      }
+
+      function handleRssiEvent(event) {
+        try {
+          const payload = JSON.parse(event.data);
+          const info = `${payload.dbm.toFixed(1)} dBm @ ${payload.frequency_mhz.toFixed(2)} MHz`;
+          setBaseStatus(`Latest RSSI: ${info}`);
+        } catch (error) {
+          console.warn("Unable to process RSSI event", error);
+        }
+      }
+
+      function handleHeartbeat(event) {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.timestamp) {
+            setBaseStatus(`Connected – heartbeat ${payload.timestamp}`);
+          }
+        } catch (error) {
+          console.warn("Unable to process heartbeat event", error);
+        }
+      }
+
+      function handleOpen() {
+        setBaseStatus("Connected to live stream.");
+      }
+
+      function handleError(event, readyState) {
+        console.error("SSE stream error", { event, readyState });
+        const stateLabel =
+          readyState === EventSource.CLOSED
+            ? "closed"
+            : readyState === EventSource.CONNECTING
               ? "connecting"
               : "open";
-          setTemporaryStatus(`Stream ${stateLabel}; attempting to reconnect…`);
-        }
+        setTemporaryStatus(`Stream ${stateLabel}; attempting to reconnect…`);
+      }
 
-        refreshStats();
-        loadRecentStations();
-        setInterval(refreshStats, 15000);
+      refreshStats();
+      loadRecentStations();
+      setInterval(refreshStats, 15000);
 
-        const streamUrl = new URL("/v1/stream", window.location.href).toString();
-        console.debug("Connecting to SSE stream:", streamUrl);
-        const source = new EventSource(streamUrl);
-        source.addEventListener("open", handleOpen);
-        source.addEventListener("error", (event) => handleError(event, source.readyState));
-        source.addEventListener("packet", handlePacketEvent);
-        source.addEventListener("rssi", handleRssiEvent);
-        source.addEventListener("heartbeat", handleHeartbeat);
-      })();
-    </script>
-  </body>
+      const streamUrl = new URL("/v1/stream", window.location.href).toString();
+      console.debug("Connecting to SSE stream:", streamUrl);
+      const source = new EventSource(streamUrl);
+      source.addEventListener("open", handleOpen);
+      source.addEventListener("error", (event) => handleError(event, source.readyState));
+      source.addEventListener("packet", handlePacketEvent);
+      source.addEventListener("rssi", handleRssiEvent);
+      source.addEventListener("heartbeat", handleHeartbeat);
+    })();
+  </script>
+</body>
+
 </html>
