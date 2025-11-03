@@ -211,6 +211,15 @@
         direwolf_tx_tail: "{{ direwolf_profile_defaults.tx_tail | default(direwolf_tx_tail) }}"
         direwolf_dwait: "{{ direwolf_profile_defaults.dwait | default(direwolf_dwait) }}"
         direwolf_tx_level: "{{ direwolf_profile_defaults.tx_level | default(direwolf_tx_level) }}"
+    - name: Coerce boolean profile flags
+      ansible.builtin.set_fact:
+        direwolf_beacon_rf_enabled: {{ direwolf_beacon_rf_enabled | bool }}
+        direwolf_beacon_ig_enabled: {{ direwolf_beacon_ig_enabled | bool }}
+        direwolf_enable_digipeater: {{ direwolf_enable_digipeater | bool }}
+        direwolf_enable_igate_rx: {{ direwolf_enable_igate_rx | bool }}
+        sa818_enable: {{ sa818_enable | bool }}
+        rtl_fm_enable: {{ rtl_fm_enable | bool }}
+        rtl_power_enable: {{ rtl_power_enable | bool }}
     - name: Enable RTL power monitor service when requested
       ansible.builtin.set_fact:
         direwolf_display_services: "{{ direwolf_display_services + ['rtl-power.service'] }}"
