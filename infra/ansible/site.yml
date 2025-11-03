@@ -129,6 +129,10 @@
     direwolf_beacon_ig_every: "5:00"
     direwolf_beacon_ig_symbol: "igate"
     direwolf_beacon_ig_overlay: R
+    direwolf_igate_server: noam.aprs2.net
+    direwolf_igate_login: ""
+    direwolf_igate_passcode: ""
+    direwolf_igate_filter: ""
     direwolf_tx_delay: 35
     direwolf_tx_tail: 5
     direwolf_dwait: 0
