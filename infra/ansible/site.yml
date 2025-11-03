@@ -8,37 +8,68 @@
     direwolf_display_home: /var/lib/direwolf
     direwolf_display_root: /opt/direwolf-display
     direwolf_display_repo_src: "/opt/direwolf-display-src"
+    direwolf_profile: shari_usb
+    direwolf_profiles:
+      shari_usb:
+        audio_input: plughw:2,0
+        audio_output: plughw:2,0
+        ptt_device: CM108
+        ptt_line: DTR
+        ptt_extra: ""
+        sa818_enable: true
+        beacon_rf_enabled: true
+        beacon_ig_enabled: true
+        enable_digipeater: true
+        enable_igate_rx: true
+        rtl_fm_enable: false
+        rtl_power_enable: false
+      digirig_mobile:
+        audio_input: plughw:2,0
+        audio_output: plughw:2,0
+        ptt_device: CM108
+        ptt_line: DTR
+        ptt_extra: ""
+        sa818_enable: true
+        beacon_rf_enabled: true
+        beacon_ig_enabled: true
+        enable_digipeater: true
+        enable_igate_rx: true
+        rtl_fm_enable: false
+        rtl_power_enable: false
+      rtlsdr:
+        audio_input: stdin
+        audio_output: plughw:2,0
+        ptt_device: ""
+        ptt_line: ""
+        ptt_extra: ""
+        sa818_enable: false
+        beacon_rf_enabled: false
+        beacon_ig_enabled: true
+        enable_digipeater: false
+        enable_igate_rx: true
+        rtl_fm_enable: true
+        rtl_fm_device: 0
+        rtl_fm_frequency: "144.390M"
+        rtl_fm_sample_rate: 48000
+        rtl_fm_gain: 49.6
+        rtl_fm_ppm: 0
+        rtl_fm_extra_opts: "-l 0 -E deemp -E dc"
+        rtl_power_enable: true
+        rtl_power_frequency_mhz: 144.390
+        rtl_power_span_khz: 0
+        rtl_power_bin_width_hz: 2000
+        rtl_power_integration: 5
+        rtl_power_interval: 30
+        rtl_power_batch_size: 6
     direwolf_audio_input: plughw:2,0
     direwolf_audio_output: plughw:2,0
     direwolf_ptt_device: CM108
     direwolf_ptt_line: DTR
     direwolf_ptt_extra: ""
-    direwolf_callsign: NOCALL
-    direwolf_latitude: "41^58.70N"
-    direwolf_longitude: "087^40.92W"
-    direwolf_beacon_comment: "Direwolf Display https://github.com/emuehlstein/direwolf-display"
-    direwolf_beacon_rf_enabled: true
-    direwolf_beacon_rf_delay: "0:30"
-    direwolf_beacon_rf_every: "30:00"
-    direwolf_beacon_rf_symbol: "digi"
-    direwolf_beacon_rf_overlay: S
-    direwolf_beacon_rf_via: WIDE1-1,WIDE2-1
-    direwolf_beacon_ig_enabled: true
-    direwolf_beacon_ig_delay: "0:30"
-    direwolf_beacon_ig_every: "5:00"
-    direwolf_beacon_ig_symbol: "igate"
-    direwolf_beacon_ig_overlay: R
     direwolf_enable_digipeater: true
-    direwolf_digipeater_input: 0
-    direwolf_digipeater_output: 0
-    direwolf_digipeater_match: "^WIDE[3-7]-[1-7]$|^TEST$"
-    direwolf_digipeater_replace: "^WIDE[12]-[12]$"
-    direwolf_digipeater_options: "TRACE"
     direwolf_enable_igate_rx: true
-    direwolf_igate_server: noam.aprs2.net
-    direwolf_igate_login: ""
-    direwolf_igate_passcode: ""
-    direwolf_igate_filter: ""
+    direwolf_beacon_rf_enabled: true
+    direwolf_beacon_ig_enabled: true
     sa818_enable: true
     sa818_speed: 9600
     sa818_frequency: "144.390"
@@ -52,6 +83,63 @@
     sa818_emphasis: Disable
     sa818_highpass: Disable
     sa818_lowpass: Disable
+    rtl_fm_enable: false
+    rtl_fm_device: 0
+    rtl_fm_frequency: "144.390M"
+    rtl_fm_sample_rate: 48000
+    rtl_fm_gain: 49.6
+    rtl_fm_ppm: 0
+    rtl_fm_extra_opts: "-l 0 -E deemp -E dc"
+    rtl_power_enable: false
+    rtl_power_frequency_mhz: 144.390
+    rtl_power_span_khz: 0
+    rtl_power_bin_width_hz: 2000
+    rtl_power_integration: 5
+    rtl_power_interval: 30
+    rtl_power_gain: ""
+    rtl_power_ppm: ""
+    rtl_power_batch_size: 6
+    rtl_power_post_url: http://127.0.0.1:9090/v1
+    rtl_power_additional_args: ""
+    direwolf_callsign: NOCALL
+    direwolf_latitude: "41^58.70N"
+    direwolf_longitude: "087^40.92W"
+    direwolf_beacon_comment: "Direwolf Display https://github.com/emuehlstein/direwolf-display"
+    direwolf_beacon_rf_delay: "0:30"
+    direwolf_beacon_rf_every: "30:00"
+    direwolf_beacon_rf_symbol: "digi"
+    direwolf_beacon_rf_overlay: S
+    direwolf_beacon_rf_via: WIDE1-1,WIDE2-1
+    direwolf_beacon_ig_delay: "0:30"
+    direwolf_beacon_ig_every: "5:00"
+    direwolf_beacon_ig_symbol: "igate"
+    direwolf_beacon_ig_overlay: R
+    direwolf_tx_delay: 35
+    direwolf_tx_tail: 5
+    direwolf_dwait: 0
+    direwolf_tx_level: 120
+    direwolf_enable_digipeater: "{{ direwolf_profiles[direwolf_profile].enable_digipeater | default(false) }}"
+    direwolf_enable_igate_rx: "{{ direwolf_profiles[direwolf_profile].enable_igate_rx | default(false) }}"
+    direwolf_audio_input: "{{ direwolf_profiles[direwolf_profile].audio_input | default('plughw:2,0') }}"
+    direwolf_audio_output: "{{ direwolf_profiles[direwolf_profile].audio_output | default('plughw:2,0') }}"
+    direwolf_ptt_device: "{{ direwolf_profiles[direwolf_profile].ptt_device | default('/dev/ttyUSB0') }}"
+    direwolf_ptt_line: "{{ direwolf_profiles[direwolf_profile].ptt_line | default('RTS') }}"
+    direwolf_ptt_extra: "{{ direwolf_profiles[direwolf_profile].ptt_extra | default('') }}"
+    direwolf_beacon_rf_enabled: "{{ direwolf_profiles[direwolf_profile].beacon_rf_enabled | default(false) }}"
+    direwolf_beacon_ig_enabled: "{{ direwolf_profiles[direwolf_profile].beacon_ig_enabled | default(true) }}"
+    sa818_enable: "{{ direwolf_profiles[direwolf_profile].sa818_enable | default(false) }}"
+    sa818_speed: "{{ direwolf_profiles[direwolf_profile].sa818_speed | default(9600) }}"
+    sa818_frequency: "{{ direwolf_profiles[direwolf_profile].sa818_frequency | default('144.390') }}"
+    sa818_offset: "{{ direwolf_profiles[direwolf_profile].sa818_offset | default('0') }}"
+    sa818_bandwidth: "{{ direwolf_profiles[direwolf_profile].sa818_bandwidth | default('wide') }}"
+    sa818_squelch: "{{ direwolf_profiles[direwolf_profile].sa818_squelch | default(4) }}"
+    sa818_ctcss: "{{ direwolf_profiles[direwolf_profile].sa818_ctcss | default('') }}"
+    sa818_dcs: "{{ direwolf_profiles[direwolf_profile].sa818_dcs | default('') }}"
+    sa818_tail: "{{ direwolf_profiles[direwolf_profile].sa818_tail | default('') }}"
+    sa818_volume: "{{ direwolf_profiles[direwolf_profile].sa818_volume | default(5) }}"
+    sa818_emphasis: "{{ direwolf_profiles[direwolf_profile].sa818_emphasis | default('Disable') }}"
+    sa818_highpass: "{{ direwolf_profiles[direwolf_profile].sa818_highpass | default('Disable') }}"
+    sa818_lowpass: "{{ direwolf_profiles[direwolf_profile].sa818_lowpass | default('Disable') }}"
     direwolf_display_services:
       - direwolf.service
       - direwolf-display.service
@@ -64,11 +152,69 @@
       - python3-venv
       - python3-pip
       - direwolf
+      - rtl-sdr
   pre_tasks:
     - name: Refresh apt cache
       ansible.builtin.apt:
         update_cache: true
         cache_valid_time: 3600
+    - name: Resolve profile defaults
+      ansible.builtin.set_fact:
+        direwolf_profile_defaults: "{{ direwolf_profiles.get(direwolf_profile, {}) }}"
+    - name: Validate requested profile
+      ansible.builtin.fail:
+        msg: "Unknown direwolf_profile '{{ direwolf_profile }}'. Available profiles: {{ direwolf_profiles.keys() | join(', ') }}"
+      when: direwolf_profile not in direwolf_profiles
+    - name: Apply profile overrides
+      ansible.builtin.set_fact:
+        direwolf_audio_input: "{{ direwolf_profile_defaults.audio_input | default(direwolf_audio_input) }}"
+        direwolf_audio_output: "{{ direwolf_profile_defaults.audio_output | default(direwolf_audio_output) }}"
+        direwolf_ptt_device: "{{ direwolf_profile_defaults.ptt_device | default(direwolf_ptt_device) }}"
+        direwolf_ptt_line: "{{ direwolf_profile_defaults.ptt_line | default(direwolf_ptt_line) }}"
+        direwolf_ptt_extra: "{{ direwolf_profile_defaults.ptt_extra | default(direwolf_ptt_extra) }}"
+        direwolf_beacon_rf_enabled: {{ (direwolf_profile_defaults.beacon_rf_enabled | default(direwolf_beacon_rf_enabled)) | bool }}
+        direwolf_beacon_ig_enabled: {{ (direwolf_profile_defaults.beacon_ig_enabled | default(direwolf_beacon_ig_enabled)) | bool }}
+        direwolf_enable_digipeater: {{ (direwolf_profile_defaults.enable_digipeater | default(direwolf_enable_digipeater)) | bool }}
+        direwolf_enable_igate_rx: {{ (direwolf_profile_defaults.enable_igate_rx | default(direwolf_enable_igate_rx)) | bool }}
+        sa818_enable: {{ (direwolf_profile_defaults.sa818_enable | default(sa818_enable)) | bool }}
+        sa818_speed: "{{ direwolf_profile_defaults.sa818_speed | default(sa818_speed) }}"
+        sa818_frequency: "{{ direwolf_profile_defaults.sa818_frequency | default(sa818_frequency) }}"
+        sa818_offset: "{{ direwolf_profile_defaults.sa818_offset | default(sa818_offset) }}"
+        sa818_bandwidth: "{{ direwolf_profile_defaults.sa818_bandwidth | default(sa818_bandwidth) }}"
+        sa818_squelch: "{{ direwolf_profile_defaults.sa818_squelch | default(sa818_squelch) }}"
+        sa818_ctcss: "{{ direwolf_profile_defaults.sa818_ctcss | default(sa818_ctcss) }}"
+        sa818_dcs: "{{ direwolf_profile_defaults.sa818_dcs | default(sa818_dcs) }}"
+        sa818_tail: "{{ direwolf_profile_defaults.sa818_tail | default(sa818_tail) }}"
+        sa818_volume: "{{ direwolf_profile_defaults.sa818_volume | default(sa818_volume) }}"
+        sa818_emphasis: "{{ direwolf_profile_defaults.sa818_emphasis | default(sa818_emphasis) }}"
+        sa818_highpass: "{{ direwolf_profile_defaults.sa818_highpass | default(sa818_highpass) }}"
+        sa818_lowpass: "{{ direwolf_profile_defaults.sa818_lowpass | default(sa818_lowpass) }}"
+        rtl_fm_enable: {{ (direwolf_profile_defaults.rtl_fm_enable | default(rtl_fm_enable)) | bool }}
+        rtl_fm_device: "{{ direwolf_profile_defaults.rtl_fm_device | default(rtl_fm_device) }}"
+        rtl_fm_frequency: "{{ direwolf_profile_defaults.rtl_fm_frequency | default(rtl_fm_frequency) }}"
+        rtl_fm_sample_rate: "{{ direwolf_profile_defaults.rtl_fm_sample_rate | default(rtl_fm_sample_rate) }}"
+        rtl_fm_gain: "{{ direwolf_profile_defaults.rtl_fm_gain | default(rtl_fm_gain) }}"
+        rtl_fm_ppm: "{{ direwolf_profile_defaults.rtl_fm_ppm | default(rtl_fm_ppm) }}"
+        rtl_fm_extra_opts: "{{ direwolf_profile_defaults.rtl_fm_extra_opts | default(rtl_fm_extra_opts) }}"
+        rtl_power_enable: {{ (direwolf_profile_defaults.rtl_power_enable | default(rtl_power_enable)) | bool }}
+        rtl_power_frequency_mhz: "{{ direwolf_profile_defaults.rtl_power_frequency_mhz | default(rtl_power_frequency_mhz) }}"
+        rtl_power_span_khz: "{{ direwolf_profile_defaults.rtl_power_span_khz | default(rtl_power_span_khz) }}"
+        rtl_power_bin_width_hz: "{{ direwolf_profile_defaults.rtl_power_bin_width_hz | default(rtl_power_bin_width_hz) }}"
+        rtl_power_integration: "{{ direwolf_profile_defaults.rtl_power_integration | default(rtl_power_integration) }}"
+        rtl_power_interval: "{{ direwolf_profile_defaults.rtl_power_interval | default(rtl_power_interval) }}"
+        rtl_power_batch_size: "{{ direwolf_profile_defaults.rtl_power_batch_size | default(rtl_power_batch_size) }}"
+        rtl_power_gain: "{{ direwolf_profile_defaults.rtl_power_gain | default(rtl_power_gain) }}"
+        rtl_power_ppm: "{{ direwolf_profile_defaults.rtl_power_ppm | default(rtl_power_ppm) }}"
+        rtl_power_post_url: "{{ direwolf_profile_defaults.rtl_power_post_url | default(rtl_power_post_url) }}"
+        rtl_power_additional_args: "{{ direwolf_profile_defaults.rtl_power_additional_args | default(rtl_power_additional_args) }}"
+        direwolf_tx_delay: "{{ direwolf_profile_defaults.tx_delay | default(direwolf_tx_delay) }}"
+        direwolf_tx_tail: "{{ direwolf_profile_defaults.tx_tail | default(direwolf_tx_tail) }}"
+        direwolf_dwait: "{{ direwolf_profile_defaults.dwait | default(direwolf_dwait) }}"
+        direwolf_tx_level: "{{ direwolf_profile_defaults.tx_level | default(direwolf_tx_level) }}"
+    - name: Enable RTL power monitor service when requested
+      ansible.builtin.set_fact:
+        direwolf_display_services: "{{ direwolf_display_services + ['rtl-power.service'] }}"
+      when: rtl_power_enable | bool and 'rtl-power.service' not in direwolf_display_services
 
   tasks:
     - name: Install required packages

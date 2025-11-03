@@ -16,6 +16,11 @@ IGATE_FILTER=""
 LAT_DEC=""
 LON_DEC=""
 BEACON_COMMENT=""
+PROFILE="shari_usb"
+TX_DELAY=""
+TX_TAIL=""
+DWAIT=""
+TX_LEVEL=""
 
 usage() {
   cat <<'EOF'
@@ -23,10 +28,15 @@ Usage: firstrun.sh [options]
 
 Options:
   --callsign <CALLSIGN>  Seed the Direwolf MYCALL value during provisioning.
+  --profile <NAME>       Hardware profile (shari_usb, digirig_mobile, rtlsdr).
   --dest <PATH>          Destination for the repository clone (default: /opt/direwolf-display-src).
   --lat <DECIMAL>        Latitude in decimal degrees (e.g., 33.7991).
   --lon <DECIMAL>        Longitude in decimal degrees (e.g., -84.2935).
   --comment <TEXT>       APRS beacon comment text.
+  --tx-delay <UNITS>     Direwolf TXDELAY value (in 10 ms units).
+  --tx-tail <UNITS>      Direwolf TXTAIL hang time (in 10 ms units).
+  --dwait <UNITS>        Direwolf DWAIT (delay after carrier drop) value.
+  --tx-level <0-255>     Direwolf TXLEVEL setting.
   --digipeater           Enable standard WIDEn-N digipeating (defaults provided).
   --digipeater-match <PATTERN>
                          Override the incoming path match regex.
@@ -54,6 +64,14 @@ while [[ $# -gt 0 ]]; do
       CALLSIGN="$2"
       shift 2
       ;;
+    --profile)
+      if [[ $# -lt 2 ]]; then
+        echo "Error: --profile requires a value." >&2
+        exit 1
+      fi
+      PROFILE="$2"
+      shift 2
+      ;;
     --lat)
       if [[ $# -lt 2 ]]; then
         echo "Error: --lat requires a value." >&2
@@ -76,6 +94,38 @@ while [[ $# -gt 0 ]]; do
         exit 1
       fi
       BEACON_COMMENT="$2"
+      shift 2
+      ;;
+    --tx-delay)
+      if [[ $# -lt 2 ]]; then
+        echo "Error: --tx-delay requires a value." >&2
+        exit 1
+      fi
+      TX_DELAY="$2"
+      shift 2
+      ;;
+    --tx-tail)
+      if [[ $# -lt 2 ]]; then
+        echo "Error: --tx-tail requires a value." >&2
+        exit 1
+      fi
+      TX_TAIL="$2"
+      shift 2
+      ;;
+    --dwait)
+      if [[ $# -lt 2 ]]; then
+        echo "Error: --dwait requires a value." >&2
+        exit 1
+      fi
+      DWAIT="$2"
+      shift 2
+      ;;
+    --tx-level)
+      if [[ $# -lt 2 ]]; then
+        echo "Error: --tx-level requires a value." >&2
+        exit 1
+      fi
+      TX_LEVEL="$2"
       shift 2
       ;;
     --dest|-d)
@@ -183,11 +233,26 @@ postinstall_args=()
 if [[ -n "$CALLSIGN" ]]; then
   postinstall_args+=(--callsign "$CALLSIGN")
 fi
+if [[ -n "$PROFILE" ]]; then
+  postinstall_args+=(--profile "$PROFILE")
+fi
 if [[ -n "$LAT_DEC" ]]; then
   postinstall_args+=(--lat "$LAT_DEC" --lon "$LON_DEC")
 fi
 if [[ -n "$BEACON_COMMENT" ]]; then
   postinstall_args+=(--comment "$BEACON_COMMENT")
+fi
+if [[ -n "$TX_DELAY" ]]; then
+  postinstall_args+=(--tx-delay "$TX_DELAY")
+fi
+if [[ -n "$TX_TAIL" ]]; then
+  postinstall_args+=(--tx-tail "$TX_TAIL")
+fi
+if [[ -n "$DWAIT" ]]; then
+  postinstall_args+=(--dwait "$DWAIT")
+fi
+if [[ -n "$TX_LEVEL" ]]; then
+  postinstall_args+=(--tx-level "$TX_LEVEL")
 fi
 if [[ "$DIGIPEATER" == true ]]; then
   postinstall_args+=(--digipeater)

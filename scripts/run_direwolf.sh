@@ -18,6 +18,13 @@ set -euo pipefail
 : "${SA818_EMPHASIS:=}"
 : "${SA818_HIGHPASS:=}"
 : "${SA818_LOWPASS:=}"
+: "${RTL_FM_ENABLE:=0}"
+: "${RTL_FM_DEVICE:=0}"
+: "${RTL_FM_FREQUENCY:=144.390M}"
+: "${RTL_FM_SAMPLE_RATE:=48000}"
+: "${RTL_FM_GAIN:=}"
+: "${RTL_FM_PPM:=}"
+: "${RTL_FM_EXTRA_OPTS:=-l 0 -E deemp -E dc}"
 : "${UV_BIN:=/usr/local/bin/uv}"
 
 if [[ ! -x "${UV_BIN}" ]]; then
@@ -102,6 +109,38 @@ direwolf_cmd=(
 if [[ -n "${DIREWOLF_EXTRA_OPTS}" ]]; then
   # shellcheck disable=SC2206 # word-splitting is intentional for extra options
   direwolf_cmd+=(${DIREWOLF_EXTRA_OPTS})
+fi
+
+rtl_fm_enable_value="$(printf '%s' "${RTL_FM_ENABLE}" | tr '[:upper:]' '[:lower:]')"
+if [[ "${rtl_fm_enable_value}" != "0" && "${rtl_fm_enable_value}" != "false" ]]; then
+  if ! command -v rtl_fm >/dev/null 2>&1; then
+    echo "[run_direwolf] WARNING: rtl_fm not found but RTL_FM_ENABLE is set; falling back to direct ALSA" >&2
+  else
+    rtl_fm_bin="$(command -v rtl_fm)"
+    rtl_fm_cmd=(
+      "${rtl_fm_bin}"
+      -d "${RTL_FM_DEVICE}"
+      -f "${RTL_FM_FREQUENCY}"
+      -s "${RTL_FM_SAMPLE_RATE}"
+      -M fm
+      -A fast
+    )
+    if [[ -n "${RTL_FM_GAIN}" ]]; then
+      rtl_fm_cmd+=(-g "${RTL_FM_GAIN}")
+    fi
+    if [[ -n "${RTL_FM_PPM}" ]]; then
+      rtl_fm_cmd+=(-p "${RTL_FM_PPM}")
+    fi
+    if [[ -n "${RTL_FM_EXTRA_OPTS}" ]]; then
+      # shellcheck disable=SC2206 # intentional word splitting
+      rtl_fm_cmd+=(${RTL_FM_EXTRA_OPTS})
+    fi
+
+    direwolf_pipe_cmd=(${direwolf_cmd[@]} -)
+    echo "[run_direwolf] Starting rtl_fm → direwolf pipeline" >&2
+    "${rtl_fm_cmd[@]}" - | "${direwolf_pipe_cmd[@]}"
+    exit $?
+  fi
 fi
 
 exec "${direwolf_cmd[@]}"

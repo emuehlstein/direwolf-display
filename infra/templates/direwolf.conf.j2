@@ -5,11 +5,18 @@ ARATE 48000
 CHANNEL 0
 MYCALL {{ direwolf_callsign }}
 MODEM 1200
-{% if direwolf_ptt_device | lower == 'cm108' %}
+{% if direwolf_ptt_device %}
+  {% if direwolf_ptt_device | lower == 'cm108' %}
 PTT CM108
-{% else %}
+  {% else %}
 PTT {{ direwolf_ptt_device }} {{ direwolf_ptt_line }}{% if direwolf_ptt_extra %} {{ direwolf_ptt_extra }}{% endif %}
+  {% endif %}
 {% endif %}
+
+TXDELAY {{ direwolf_tx_delay }}
+TXTAIL {{ direwolf_tx_tail }}
+DWAIT {{ direwolf_dwait }}
+TXLEVEL {{ direwolf_tx_level }}
 
 {% set have_coords = direwolf_latitude and direwolf_longitude %}
 {% if have_coords and direwolf_beacon_rf_enabled %}

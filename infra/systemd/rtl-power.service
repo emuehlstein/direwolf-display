@@ -1,0 +1,20 @@
+[Unit]
+Description=RTL Power Monitor for Direwolf Display
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=direwolf
+Group=direwolf
+WorkingDirectory=/opt/direwolf-display
+EnvironmentFile=-/etc/direwolf/direwolf.env
+Environment=UV_PROJECT_ENV=/opt/direwolf-display/.venv
+ExecStart=/opt/direwolf-display/scripts/run_rtl_power.sh
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

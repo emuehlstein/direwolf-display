@@ -176,6 +176,7 @@ details during the initial boot:
 ```bash
 sudo ./scripts/firstrun.sh \
   --callsign N0CALL-10 \
+  --profile shari_usb \
   --lat 33.7991 \
   --lon -84.2935 \
   --comment "ShariPi IGate" \
@@ -188,15 +189,23 @@ Flags you might care about:
 
 - `--callsign`: seeds the `MYCALL` line in Direwolf and, when `--rx-igate` is
   supplied, doubles as the APRS-IS login/passcode seed.
+- `--profile`: selects hardware presets (`shari_usb`, `digirig_mobile`, or `rtlsdr`).
 - `--lat` / `--lon`: decimal-degree coordinates converted to APRS `DD^MM.mmH`
   format for RF and IG beacons.
 - `--comment`: APRS status comment broadcast in both beacons.
+- `--tx-delay`, `--tx-tail`, `--dwait`, `--tx-level`: tune Direwolf key-up delay,
+  hang time, post-carrier wait, and audio output level without editing templates.
 - `--digipeater`: enables a WIDEn-N-rule by default; use the `--digipeater-*`
   overrides to supply custom match/replace/options.
 - `--rx-igate`: connects to APRS-IS (default rotate: `noam.aprs2.net`); combine
   with `--igate-login`, `--igate-filter`, and `--igate-server` to tune behaviour.
 - `--igate-passcode`: optional; if omitted we derive the standard APRS-IS passcode
   from the login (or callsign).
+
+`digirig_mobile` currently mirrors the `shari_usb` defaults so you can refine
+audio/PTT settings later. The `rtlsdr` profile turns the stack into a receive-only
+IGate: it pipes `rtl_fm` audio into Direwolf, disables RF beaconing/PTT, and
+starts the bundled `rtl_power` monitor to feed RSSI samples into the backend.
 
 The script accepts `--dest` when you want the repository in a different path.
 If the path already exists it skips the clone and just invokes the post-install
@@ -210,6 +219,7 @@ independently on a Pi that already has this repository checked out:
 ```bash
 sudo ./scripts/pi_postinstall.sh \
   --callsign N0CALL-10 \
+  --profile shari_usb \
   --lat 33.7991 \
   --lon -84.2935 \
   --comment "ShariPi IGate" \
@@ -221,11 +231,13 @@ sudo ./scripts/pi_postinstall.sh \
 Highlights:
 
 - Writes `/etc/direwolf.conf` using `infra/templates/direwolf.conf.j2`, including
-  SharPi audio defaults (`plughw:2,0`), PTT on `/dev/ttyUSB0` (RTS), optional
-  digipeater rules, APRS-IS settings, and RF/IG PBEACON entries when coordinates
+  SharPi audio defaults (`plughw:2,0`), PTT via the CM108 GPIO (or disabling PTT
+  for receive-only profiles), optional digipeater rules, APRS-IS settings, and RF/IG PBEACON entries when coordinates
   are supplied.
 - Installs the `direwolf.service`, `direwolf-display.service`, and `direwolf-tail.service`
   units and reloads systemd.
+- When the `rtlsdr` profile is selected, also enables `rtl-power.service` and the
+  bundled rtl_fm audio pipeline for receive-only IGate operation.
 - Installs the `sa818` Python package and configures the SA818-based SharPi:
   `scripts/run_direwolf.sh` auto-programs frequency, squelch, bandwidth, tones,
   and filters via `uv run -- sa818 …` before launching Direwolf.
@@ -241,7 +253,7 @@ run-on-first-boot hook so the Pi clones this repository and provisions itself:
 ```bash
 curl -fsSL https://github.com/emuehlstein/direwolf-display/archive/refs/heads/main.tar.gz \
   | tar -xz --strip-components=1 -C /opt/direwolf-display-src && \
-sudo bash /opt/direwolf-display-src/scripts/firstrun.sh --callsign N0CALL-10 --digipeater --rx-igate
+sudo bash /opt/direwolf-display-src/scripts/firstrun.sh --callsign N0CALL-10 --profile shari_usb --digipeater --rx-igate
 ```
 
 After the first boot completes, tail the services to confirm healthy startup:
