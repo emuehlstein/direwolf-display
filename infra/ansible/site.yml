@@ -118,28 +118,6 @@
     direwolf_tx_tail: 5
     direwolf_dwait: 0
     direwolf_tx_level: 120
-    direwolf_enable_digipeater: "{{ direwolf_profiles[direwolf_profile].enable_digipeater | default(false) }}"
-    direwolf_enable_igate_rx: "{{ direwolf_profiles[direwolf_profile].enable_igate_rx | default(false) }}"
-    direwolf_audio_input: "{{ direwolf_profiles[direwolf_profile].audio_input | default('plughw:2,0') }}"
-    direwolf_audio_output: "{{ direwolf_profiles[direwolf_profile].audio_output | default('plughw:2,0') }}"
-    direwolf_ptt_device: "{{ direwolf_profiles[direwolf_profile].ptt_device | default('/dev/ttyUSB0') }}"
-    direwolf_ptt_line: "{{ direwolf_profiles[direwolf_profile].ptt_line | default('RTS') }}"
-    direwolf_ptt_extra: "{{ direwolf_profiles[direwolf_profile].ptt_extra | default('') }}"
-    direwolf_beacon_rf_enabled: "{{ direwolf_profiles[direwolf_profile].beacon_rf_enabled | default(false) }}"
-    direwolf_beacon_ig_enabled: "{{ direwolf_profiles[direwolf_profile].beacon_ig_enabled | default(true) }}"
-    sa818_enable: "{{ direwolf_profiles[direwolf_profile].sa818_enable | default(false) }}"
-    sa818_speed: "{{ direwolf_profiles[direwolf_profile].sa818_speed | default(9600) }}"
-    sa818_frequency: "{{ direwolf_profiles[direwolf_profile].sa818_frequency | default('144.390') }}"
-    sa818_offset: "{{ direwolf_profiles[direwolf_profile].sa818_offset | default('0') }}"
-    sa818_bandwidth: "{{ direwolf_profiles[direwolf_profile].sa818_bandwidth | default('wide') }}"
-    sa818_squelch: "{{ direwolf_profiles[direwolf_profile].sa818_squelch | default(4) }}"
-    sa818_ctcss: "{{ direwolf_profiles[direwolf_profile].sa818_ctcss | default('') }}"
-    sa818_dcs: "{{ direwolf_profiles[direwolf_profile].sa818_dcs | default('') }}"
-    sa818_tail: "{{ direwolf_profiles[direwolf_profile].sa818_tail | default('') }}"
-    sa818_volume: "{{ direwolf_profiles[direwolf_profile].sa818_volume | default(5) }}"
-    sa818_emphasis: "{{ direwolf_profiles[direwolf_profile].sa818_emphasis | default('Disable') }}"
-    sa818_highpass: "{{ direwolf_profiles[direwolf_profile].sa818_highpass | default('Disable') }}"
-    sa818_lowpass: "{{ direwolf_profiles[direwolf_profile].sa818_lowpass | default('Disable') }}"
     direwolf_display_services:
       - direwolf.service
       - direwolf-display.service
@@ -172,11 +150,11 @@
         direwolf_ptt_device: "{{ direwolf_profile_defaults.ptt_device | default(direwolf_ptt_device) }}"
         direwolf_ptt_line: "{{ direwolf_profile_defaults.ptt_line | default(direwolf_ptt_line) }}"
         direwolf_ptt_extra: "{{ direwolf_profile_defaults.ptt_extra | default(direwolf_ptt_extra) }}"
-        direwolf_beacon_rf_enabled: {{ (direwolf_profile_defaults.beacon_rf_enabled | default(direwolf_beacon_rf_enabled)) | bool }}
-        direwolf_beacon_ig_enabled: {{ (direwolf_profile_defaults.beacon_ig_enabled | default(direwolf_beacon_ig_enabled)) | bool }}
-        direwolf_enable_digipeater: {{ (direwolf_profile_defaults.enable_digipeater | default(direwolf_enable_digipeater)) | bool }}
-        direwolf_enable_igate_rx: {{ (direwolf_profile_defaults.enable_igate_rx | default(direwolf_enable_igate_rx)) | bool }}
-        sa818_enable: {{ (direwolf_profile_defaults.sa818_enable | default(sa818_enable)) | bool }}
+        direwolf_beacon_rf_enabled: "{{ direwolf_profile_defaults.beacon_rf_enabled | default(direwolf_beacon_rf_enabled) }}"
+        direwolf_beacon_ig_enabled: "{{ direwolf_profile_defaults.beacon_ig_enabled | default(direwolf_beacon_ig_enabled) }}"
+        direwolf_enable_digipeater: "{{ direwolf_profile_defaults.enable_digipeater | default(direwolf_enable_digipeater) }}"
+        direwolf_enable_igate_rx: "{{ direwolf_profile_defaults.enable_igate_rx | default(direwolf_enable_igate_rx) }}"
+        sa818_enable: "{{ direwolf_profile_defaults.sa818_enable | default(sa818_enable) }}"
         sa818_speed: "{{ direwolf_profile_defaults.sa818_speed | default(sa818_speed) }}"
         sa818_frequency: "{{ direwolf_profile_defaults.sa818_frequency | default(sa818_frequency) }}"
         sa818_offset: "{{ direwolf_profile_defaults.sa818_offset | default(sa818_offset) }}"
@@ -189,14 +167,14 @@
         sa818_emphasis: "{{ direwolf_profile_defaults.sa818_emphasis | default(sa818_emphasis) }}"
         sa818_highpass: "{{ direwolf_profile_defaults.sa818_highpass | default(sa818_highpass) }}"
         sa818_lowpass: "{{ direwolf_profile_defaults.sa818_lowpass | default(sa818_lowpass) }}"
-        rtl_fm_enable: {{ (direwolf_profile_defaults.rtl_fm_enable | default(rtl_fm_enable)) | bool }}
+        rtl_fm_enable: "{{ direwolf_profile_defaults.rtl_fm_enable | default(rtl_fm_enable) }}"
         rtl_fm_device: "{{ direwolf_profile_defaults.rtl_fm_device | default(rtl_fm_device) }}"
         rtl_fm_frequency: "{{ direwolf_profile_defaults.rtl_fm_frequency | default(rtl_fm_frequency) }}"
         rtl_fm_sample_rate: "{{ direwolf_profile_defaults.rtl_fm_sample_rate | default(rtl_fm_sample_rate) }}"
         rtl_fm_gain: "{{ direwolf_profile_defaults.rtl_fm_gain | default(rtl_fm_gain) }}"
         rtl_fm_ppm: "{{ direwolf_profile_defaults.rtl_fm_ppm | default(rtl_fm_ppm) }}"
         rtl_fm_extra_opts: "{{ direwolf_profile_defaults.rtl_fm_extra_opts | default(rtl_fm_extra_opts) }}"
-        rtl_power_enable: {{ (direwolf_profile_defaults.rtl_power_enable | default(rtl_power_enable)) | bool }}
+        rtl_power_enable: "{{ direwolf_profile_defaults.rtl_power_enable | default(rtl_power_enable) }}"
         rtl_power_frequency_mhz: "{{ direwolf_profile_defaults.rtl_power_frequency_mhz | default(rtl_power_frequency_mhz) }}"
         rtl_power_span_khz: "{{ direwolf_profile_defaults.rtl_power_span_khz | default(rtl_power_span_khz) }}"
         rtl_power_bin_width_hz: "{{ direwolf_profile_defaults.rtl_power_bin_width_hz | default(rtl_power_bin_width_hz) }}"
@@ -211,15 +189,6 @@
         direwolf_tx_tail: "{{ direwolf_profile_defaults.tx_tail | default(direwolf_tx_tail) }}"
         direwolf_dwait: "{{ direwolf_profile_defaults.dwait | default(direwolf_dwait) }}"
         direwolf_tx_level: "{{ direwolf_profile_defaults.tx_level | default(direwolf_tx_level) }}"
-    - name: Coerce boolean profile flags
-      ansible.builtin.set_fact:
-        direwolf_beacon_rf_enabled: {{ direwolf_beacon_rf_enabled | bool }}
-        direwolf_beacon_ig_enabled: {{ direwolf_beacon_ig_enabled | bool }}
-        direwolf_enable_digipeater: {{ direwolf_enable_digipeater | bool }}
-        direwolf_enable_igate_rx: {{ direwolf_enable_igate_rx | bool }}
-        sa818_enable: {{ sa818_enable | bool }}
-        rtl_fm_enable: {{ rtl_fm_enable | bool }}
-        rtl_power_enable: {{ rtl_power_enable | bool }}
     - name: Enable RTL power monitor service when requested
       ansible.builtin.set_fact:
         direwolf_display_services: "{{ direwolf_display_services + ['rtl-power.service'] }}"
