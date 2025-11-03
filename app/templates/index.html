@@ -46,6 +46,68 @@
       pointer-events: none;
     }
 
+    .aprs-log {
+      position: absolute;
+      inset: auto 1rem 8rem 1rem;
+      /* Position above status bar */
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 0.75rem 1rem;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 0.5rem;
+      backdrop-filter: blur(4px);
+      font-size: 0.8rem;
+      line-height: 1.2;
+      z-index: 999;
+      pointer-events: none;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    }
+
+    .aprs-log-entry {
+      margin-bottom: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      background: rgba(255, 255, 255, 0.05);
+      word-break: break-all;
+    }
+
+    .aprs-log-entry.incoming {
+      border-left: 3px solid #8bd3ff;
+    }
+
+    .aprs-log-entry.outgoing {
+      border-left: 3px solid #ffd166;
+    }
+
+    .aprs-log-entry .timestamp {
+      color: #a0a0a0;
+      font-size: 0.75rem;
+    }
+
+    .aprs-log-entry .callsign {
+      color: #8bd3ff;
+      font-weight: 600;
+    }
+
+    .aprs-log-entry .direction {
+      color: #ffd166;
+      font-weight: 500;
+    }
+
+    .aprs-log::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .aprs-log::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+    }
+
+    .aprs-log::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 2px;
+    }
+
     .status-grid {
       display: grid;
       gap: 0.25rem 1.5rem;
@@ -140,6 +202,13 @@
 <body>
   <div id="app">
     <div id="map" role="img" aria-label="Direwolf packet map"></div>
+
+    <!-- APRS Log Section -->
+    <section class="aprs-log" id="aprs-log" aria-live="polite" aria-label="APRS packet log">
+      <!-- Log entries will be added here dynamically -->
+    </section>
+
+    <!-- Status Bar -->
     <section class="status-bar" aria-live="polite">
       <div class="status-grid">
         <span><strong>Packets</strong><output id="packets-count">0</output></span>
@@ -171,6 +240,7 @@
       const rssiOutput = document.querySelector("#rssi-count");
       const stationsOutput = document.querySelector("#stations-count");
       const statusMessage = document.querySelector("#status-message");
+      const aprsLog = document.querySelector("#aprs-log");
 
       const stationTrails = new Map();
       const stationTrailDots = new Map(); // Store clickable dots for each trail position
@@ -179,6 +249,43 @@
       const activePathLayers = [];
       const highlightedMarkers = new Map();
       let baseStatusText = statusMessage.textContent.trim() || "Connecting to stream…";
+
+      // APRS Log management
+      const logHistoryLimit = 50; // Keep last 50 log entries
+      let logEntryCount = 0;
+
+      function addLogEntry(payload, direction = 'incoming') {
+        const timestamp = new Date().toLocaleTimeString();
+        const callsign = payload.source_callsign || 'Unknown';
+        const destination = payload.destination_callsign || '';
+        const path = Array.isArray(payload.path) ? payload.path.join(',') : '';
+        const comment = payload.comment || payload.status || '';
+
+        // Create log entry element
+        const entry = document.createElement('div');
+        entry.className = `aprs-log-entry ${direction}`;
+        entry.innerHTML = `
+          <span class="timestamp">[${timestamp}]</span>
+          <span class="direction">${direction === 'incoming' ? '←' : '→'}</span>
+          <span class="callsign">${callsign}</span>
+          ${destination ? `→ ${destination}` : ''}
+          ${path ? ` via ${path}` : ''}
+          ${comment ? `: ${comment}` : ''}
+        `;
+
+        // Add to log (prepend for newest first)
+        aprsLog.insertBefore(entry, aprsLog.firstChild);
+        logEntryCount++;
+
+        // Remove old entries if we exceed the limit
+        while (logEntryCount > logHistoryLimit && aprsLog.lastChild) {
+          aprsLog.removeChild(aprsLog.lastChild);
+          logEntryCount--;
+        }
+
+        // Auto-scroll to top to show newest entries
+        aprsLog.scrollTop = 0;
+      }
 
       function setBaseStatus(text) {
         baseStatusText = text;
@@ -667,6 +774,7 @@
         try {
           const payload = JSON.parse(event.data);
           addPacketMarker(payload);
+          addLogEntry(payload, 'incoming');
         } catch (error) {
           console.warn("Unable to process packet event", error);
         }
