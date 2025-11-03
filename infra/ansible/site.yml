@@ -28,6 +28,7 @@
         digipeater_match: "^WIDE[3-7]-[1-7]$|^TEST$"
         digipeater_replace: "^WIDE[12]-[12]$"
         digipeater_options: "TRACE"
+        direwolf_sample_rate: 44100
       digirig_mobile:
         audio_input: plughw:2,0
         audio_output: plughw:2,0
@@ -46,6 +47,7 @@
         digipeater_match: "^WIDE[3-7]-[1-7]$|^TEST$"
         digipeater_replace: "^WIDE[12]-[12]$"
         digipeater_options: "TRACE"
+        direwolf_sample_rate: 44100
       rtlsdr:
         audio_input: stdin
         audio_output: plughw:2,0
@@ -60,7 +62,7 @@
         rtl_fm_enable: true
         rtl_fm_device: 0
         rtl_fm_frequency: "144.390M"
-        rtl_fm_sample_rate: 48000
+        rtl_fm_sample_rate: 44100
         rtl_fm_gain: 49.6
         rtl_fm_ppm: 0
         rtl_fm_extra_opts: "-l 0 -E deemp -E dc"
@@ -76,6 +78,7 @@
         digipeater_match: "^WIDE[3-7]-[1-7]$|^TEST$"
         digipeater_replace: "^WIDE[12]-[12]$"
         digipeater_options: "TRACE"
+        direwolf_sample_rate: 44100
     direwolf_audio_input: plughw:2,0
     direwolf_audio_output: plughw:2,0
     direwolf_ptt_device: CM108
@@ -91,6 +94,7 @@
     sa818_offset: "0"
     sa818_bandwidth: wide
     sa818_squelch: 4
+    direwolf_sample_rate: 44100
     sa818_ctcss: ""
     sa818_dcs: ""
     sa818_tail: ""
@@ -101,7 +105,7 @@
     rtl_fm_enable: false
     rtl_fm_device: 0
     rtl_fm_frequency: "144.390M"
-    rtl_fm_sample_rate: 48000
+    rtl_fm_sample_rate: 44100
     rtl_fm_gain: 49.6
     rtl_fm_ppm: 0
     rtl_fm_extra_opts: "-l 0 -E deemp -E dc"
@@ -194,6 +198,7 @@
         rtl_fm_enable: "{{ direwolf_profile_defaults.rtl_fm_enable | default(rtl_fm_enable) }}"
         rtl_fm_device: "{{ direwolf_profile_defaults.rtl_fm_device | default(rtl_fm_device) }}"
         rtl_fm_frequency: "{{ direwolf_profile_defaults.rtl_fm_frequency | default(rtl_fm_frequency) }}"
+        direwolf_sample_rate: "{{ direwolf_profile_defaults.direwolf_sample_rate | default(direwolf_sample_rate) }}"
         rtl_fm_sample_rate: "{{ direwolf_profile_defaults.rtl_fm_sample_rate | default(rtl_fm_sample_rate) }}"
         rtl_fm_gain: "{{ direwolf_profile_defaults.rtl_fm_gain | default(rtl_fm_gain) }}"
         rtl_fm_ppm: "{{ direwolf_profile_defaults.rtl_fm_ppm | default(rtl_fm_ppm) }}"
